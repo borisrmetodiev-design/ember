@@ -40,7 +40,7 @@ switch (process.env.HOST_ENV) {
         prefix = "\\";   // single backslash
         break;
     default:
-        prefix = "!";    // fallback if HOST_ENV not set
+        prefix = "\\";    // fallback if HOST_ENV not set
 }
 
 // Command maps
