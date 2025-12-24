@@ -7,7 +7,8 @@ const {
     Client,
     GatewayIntentBits,
     Partials,
-    Collection
+    Collection,
+    MessageFlags
 } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
@@ -94,11 +95,17 @@ client.on("interactionCreate", async interaction => {
             try {
                 await command.executeSlash(interaction);
             } catch (err) {
+                console.error(`Error in command ${interaction.commandName}:`, err);
                 const { embed, components } = buildErrorEmbed(err.code || "004", err.err || err);
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ embeds: [embed], components, ephemeral: true });
-                } else {
-                    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+                
+                try {
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.editReply({ content: "", embeds: [embed], components });
+                    } else {
+                        await interaction.reply({ embeds: [embed], components, flags: MessageFlags.Ephemeral });
+                    }
+                } catch (replyErr) {
+                    console.error("Failed to send error message:", replyErr.message);
                 }
             }
         }

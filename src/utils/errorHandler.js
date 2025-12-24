@@ -1,14 +1,20 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require("discord.js");
+const path = require("path");
+const fs = require("fs");
 
 const ERROR_EMOJI = "<:emberERROR:1453031359894261790>";
 const BORIS_ID_1 = process.env.BORIS_ID_1;
 const BORIS_ID_2 = process.env.BORIS_ID_2;
 
-const ERROR_MAP = {
-    "001": "The bot needs to be in that server to fetch its assets.",
-    "002": "That doesn’t look like a valid ID.",
-    "003": "No asset found (avatar/banner/icon)."
-};
+// Dynamically load ERROR_MAP from errors.json
+let ERROR_MAP = {};
+try {
+    const errorsPath = path.join(__dirname, "errors.json");
+    ERROR_MAP = JSON.parse(fs.readFileSync(errorsPath, "utf8"));
+} catch (err) {
+    console.error("Failed to load errors.json:", err);
+    ERROR_MAP = { "000": "Error loading error messages." };
+}
 
 function buildErrorEmbed(code, err) {
     const embed = new EmbedBuilder()
@@ -37,19 +43,38 @@ function buildErrorEmbed(code, err) {
 }
 
 async function handleErrorButton(interaction) {
-    const errorObj = global.errorCache?.[interaction.customId];
-
-    if (![BORIS_ID_1, BORIS_ID_2].includes(interaction.user.id)) {
-        return interaction.reply({
-            content: "You don’t have permission to view error details.",
-            ephemeral: true
-        });
+    // Check if interaction is already handled
+    if (interaction.replied || interaction.deferred) {
+        return;
     }
 
-    await interaction.reply({
-        content: `\`\`\`js\n${errorObj?.stack || errorObj?.message || "No details"}\n\`\`\``,
-        ephemeral: true
-    });
+    const errorObj = global.errorCache?.[interaction.customId];
+
+    // Check permissions first
+    if (![BORIS_ID_1, BORIS_ID_2].includes(interaction.user.id)) {
+        try {
+            await interaction.reply({
+                content: "You don't have permission to view error details.",
+                flags: MessageFlags.Ephemeral
+            });
+        } catch (err) {
+            console.error("Failed to send permission error:", err.message);
+        }
+        return;
+    }
+
+    // Format the error stack/message for console-like output
+    const errorDetails = errorObj?.stack || errorObj?.message || "No details available";
+    
+    try {
+        await interaction.reply({
+            content: `\`\`\`js\n${errorDetails}\n\`\`\``,
+            flags: MessageFlags.Ephemeral
+        });
+    } catch (err) {
+        console.error("Failed to reply to error button interaction:", err.message);
+        // Interaction token likely expired, nothing we can do
+    }
 }
 
 module.exports = { buildErrorEmbed, handleErrorButton };

@@ -6,6 +6,94 @@ const path = require("path");
 const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
+// Cache for Spotify token
+let spotifyTokenCache = {
+    token: null,
+    expiresAt: 0
+};
+
+async function getSpotifyToken() {
+    // Return cached token if still valid
+    if (spotifyTokenCache.token && Date.now() < spotifyTokenCache.expiresAt) {
+        return spotifyTokenCache.token;
+    }
+
+    const clientId = process.env.SPOTIFY_ID;
+    const clientSecret = process.env.SPOTIFY_SECRET;
+
+    if (!clientId || !clientSecret) {
+        console.log("No Spotify credentials found, skipping token fetch");
+        return null;
+    }
+
+    try {
+        const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+        
+        const response = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${credentials}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'grant_type=client_credentials'
+        });
+
+        if (!response.ok) {
+            console.log(`Failed to get Spotify token: ${response.status} ${response.statusText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        
+        // Cache the token (expires in 1 hour, we'll refresh 5 min early)
+        spotifyTokenCache.token = data.access_token;
+        spotifyTokenCache.expiresAt = Date.now() + ((data.expires_in - 300) * 1000);
+        
+        console.log("✅ Successfully generated new Spotify access token");
+        return data.access_token;
+    } catch (err) {
+        console.error("Error getting Spotify token:", err.message);
+        return null;
+    }
+}
+
+async function fetchSpotifyArtwork(trackName, artistName) {
+    try {
+        const token = await getSpotifyToken();
+        if (!token) {
+            console.log("No Spotify token available, skipping artwork fetch");
+            return null;
+        }
+
+        const url = `https://api.spotify.com/v1/search?q=track:${encodeURIComponent(trackName)} artist:${encodeURIComponent(artistName)}&type=track&limit=1`;
+
+        const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+            console.log(`Spotify API error: ${res.status} ${res.statusText}`);
+            return null;
+        }
+
+        const data = await res.json();
+
+        const images = data.tracks?.items[0]?.album?.images;
+        const imageUrl = images?.[0]?.url || null;
+        
+        if (imageUrl) {
+            console.log(`✅ Found Spotify artwork for: ${trackName} by ${artistName}`);
+        } else {
+            console.log(`❌ No Spotify artwork found for: ${trackName} by ${artistName}`);
+        }
+        
+        return imageUrl; // largest image (usually 640–800px)
+    } catch (err) {
+        console.error("Error fetching Spotify artwork:", err.message);
+        return null;
+    }
+}
+
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
 
 // Animated emoji
@@ -100,7 +188,7 @@ module.exports = {
         const artist = track.artist["#text"];
         const name = track.name;
         const album = track.album["#text"] || "Unknown Album";
-        const image = track.image?.[3]?.["#text"] || null;
+        const spotifyImage = await fetchSpotifyArtwork(name, artist);
 
         const trackUrl = track.url || null;
         const artistUrl = `https://www.last.fm/music/${encodeURIComponent(artist)}`;
@@ -144,7 +232,7 @@ module.exports = {
             })
             .setTimestamp();
 
-        if (image) embed.setThumbnail(image);
+        if (spotifyImage) embed.setThumbnail(spotifyImage);
 
         return embed;
     },
