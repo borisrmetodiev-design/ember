@@ -15,8 +15,9 @@
   "014": "Discord API request failed.",
   "015": "External APIs failed to load.",
   "016": "Ping calculation failed.",
-  "017": "Permission denied for update command!",
-  "018": "Command reload failed - Files have Syntax Errors!",
+  "017": "Permission denied for update command.",
+  "018": "Command reload failed - Files have Syntax Errors.",
   "019": "Invalid LastFM user provided.",
-  "020": "No track data found for your account."
+  "020": "No track data found for your account.",
+  "021": "Permission denied."
 }
