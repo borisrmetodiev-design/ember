@@ -37,37 +37,45 @@ module.exports = {
 
     async fetchNowPlaying(username) {
         const apiKey = process.env.LASTFM_API_KEY;
+        if (!apiKey) throw { code: "006" }; // LastFM API authentication failed
 
-        // Get most recent track
-        const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(
-            username
-        )}&api_key=${apiKey}&format=json&limit=1`;
+        try {
+            // Get most recent track
+            const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(
+                username
+            )}&api_key=${apiKey}&format=json&limit=1`;
 
-        const res = await fetch(url);
-        const data = await res.json();
+            const res = await fetch(url);
+            const data = await res.json();
 
-        if (!data.recenttracks || !data.recenttracks.track) return null;
+            if (!data.recenttracks || !data.recenttracks.track || data.recenttracks.track.length === 0) {
+                throw { code: "020" }; // No track data found at all
+            }
 
-        const track = data.recenttracks.track[0];
+            const track = data.recenttracks.track[0];
 
-        // Fetch playcount
-        const infoUrl = `https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=${apiKey}&artist=${encodeURIComponent(
-            track.artist["#text"]
-        )}&track=${encodeURIComponent(track.name)}&username=${encodeURIComponent(
-            username
-        )}&format=json`;
+            // Fetch playcount
+            const infoUrl = `https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=${apiKey}&artist=${encodeURIComponent(
+                track.artist["#text"]
+            )}&track=${encodeURIComponent(track.name)}&username=${encodeURIComponent(
+                username
+            )}&format=json`;
 
-        const infoRes = await fetch(infoUrl);
-        const infoData = await infoRes.json();
+            const infoRes = await fetch(infoUrl);
+            const infoData = await infoRes.json();
 
-        const playcount = infoData.track?.userplaycount || 0;
+            const playcount = infoData.track?.userplaycount || 0;
 
-        return {
-            track,
-            playcount,
-            isNowPlaying: track["@attr"]?.nowplaying === "true",
-            playedAt: track.date?.uts ? new Date(track.date.uts * 1000) : null
-        };
+            return {
+                track,
+                playcount,
+                isNowPlaying: track["@attr"]?.nowplaying === "true",
+                playedAt: track.date?.uts ? new Date(track.date.uts * 1000) : null
+            };
+        } catch (err) {
+            if (err.code) throw err;
+            throw { code: "005", err }; // LastFM data fetch failed
+        }
     },
 
     buildNoAccountEmbed(targetUser) {
@@ -103,7 +111,7 @@ module.exports = {
         if (isNowPlaying) {
             headerText = `${MUSIC_EMOJI} Now Playing`;
         } else {
-            const playedAgo = `<t:${Math.floor(playedAt.getTime() / 1000)}:R>`;
+            const playedAgo = playedAt ? `<t:${Math.floor(playedAt.getTime() / 1000)}:R>` : "Unknown time";
             headerText = `${MUSIC_EMOJI} Last Played • ${playedAgo}`;
         }
 
@@ -142,81 +150,81 @@ module.exports = {
     },
 
     async executeSlash(interaction) {
-        const loadingEmoji = process.env.emberLOAD;
-        const targetUser = interaction.options.getUser("user") || interaction.user;
+        try {
+            const loadingEmoji = process.env.emberLOAD;
+            const targetUser = interaction.options.getUser("user") || interaction.user;
 
-        await interaction.reply({
-            content: `${loadingEmoji} Fetching Last.fm data...`,
-            ephemeral: false
-        });
-
-        const username = await this.getLastFMUsername(targetUser.id);
-
-        if (!username) {
-            return interaction.editReply({
-                content: "",
-                embeds: [this.buildNoAccountEmbed(targetUser)]
+            await interaction.reply({
+                content: `${loadingEmoji} Fetching Last.fm data...`,
+                ephemeral: false
             });
-        }
 
-        const info = await this.fetchNowPlaying(username);
-        if (!info) {
-            return interaction.editReply("Could not fetch Last.fm data.");
-        }
+            const username = await this.getLastFMUsername(targetUser.id);
 
-        const embed = await this.buildTrackEmbed(info, targetUser, username);
-
-        const sent = await interaction.editReply({
-            content: "",
-            embeds: [embed]
-        });
-
-        // 👍 👎 reactions if in a guild
-        if (interaction.guild) {
-            try {
-                await sent.react("👍");
-                await sent.react("👎");
-            } catch (e) {
-                console.error("Failed to add reactions:", e);
+            if (!username) {
+                return interaction.editReply({
+                    content: "",
+                    embeds: [this.buildNoAccountEmbed(targetUser)]
+                });
             }
+
+            const info = await this.fetchNowPlaying(username);
+
+            const embed = await this.buildTrackEmbed(info, targetUser, username);
+
+            const sent = await interaction.editReply({
+                content: "",
+                embeds: [embed]
+            });
+
+            if (interaction.guild) {
+                try {
+                    await sent.react("👍");
+                    await sent.react("👎");
+                } catch (e) {
+                    console.error("Failed to add reactions:", e);
+                }
+            }
+        } catch (err) {
+            throw err.code ? err : { code: "005", err };
         }
     },
 
     async executePrefix(message, args) {
-        const loadingEmoji = process.env.emberLOAD;
-        const targetUser = message.mentions.users.first() || message.author;
+        try {
+            const loadingEmoji = process.env.emberLOAD;
+            const targetUser = message.mentions.users.first() || message.author;
 
-        const sent = await message.reply(`${loadingEmoji} Fetching Last.fm data...`);
+            const sent = await message.reply(`${loadingEmoji} Fetching Last.fm data...`);
 
-        const username = await this.getLastFMUsername(targetUser.id);
+            const username = await this.getLastFMUsername(targetUser.id);
 
-        if (!username) {
-            return sent.edit({
-                content: "",
-                embeds: [this.buildNoAccountEmbed(targetUser)]
-            });
-        }
-
-        const info = await this.fetchNowPlaying(username);
-        if (!info) {
-            return sent.edit("Could not fetch Last.fm data.");
-        }
-
-        const embed = await this.buildTrackEmbed(info, targetUser, username);
-
-        const edited = await sent.edit({
-            content: "",
-            embeds: [embed]
-        });
-
-        // 👍 👎 reactions if in a guild
-        if (message.guild) {
-            try {
-                await edited.react("👍");
-                await edited.react("👎");
-            } catch (e) {
-                console.error("Failed to add reactions:", e);
+            if (!username) {
+                return sent.edit({
+                    content: "",
+                    embeds: [this.buildNoAccountEmbed(targetUser)]
+                });
             }
+
+            const info = await this.fetchNowPlaying(username);
+
+            const embed = await this.buildTrackEmbed(info, targetUser, username);
+
+            const edited = await sent.edit({
+                content: "",
+                embeds: [embed]
+            });
+
+            if (message.guild) {
+                try {
+                    await edited.react("👍");
+                    await edited.react("👎");
+                } catch (e) {
+                    console.error("Failed to add reactions:", e);
+                }
+            }
+        } catch (err) {
+            throw err.code ? err : { code: "005", err };
         }
     }
 };

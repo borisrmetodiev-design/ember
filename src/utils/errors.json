@@ -1,0 +1,22 @@
+{
+  "001": "Bot not in Guild / missing access",
+  "002": "Invalid Guild ID format provided.",
+  "003": "No asset set/provided.",
+  "004": "Missing required arguments.",
+  "005": "LastFM data fetch failed",
+  "006": "LastFM API authentication failed",
+  "007": "User asset fetch failed",
+  "008": "User not found",
+  "009": "Invalid User ID format provided",
+  "010": "File is already a GIF format",
+  "011": "Sharp API failed to load.",
+  "012": "File conversion failed.",     
+  "013": "Unsupported file format.",
+  "014": "Discord API request failed.",
+  "015": "External APIs failed to load.",
+  "016": "Ping calculation failed.",
+  "017": "Permission denied for update command!",
+  "018": "Command reload failed - Files have Syntax Errors!",
+  "019": "Invalid LastFM user provided.",
+  "020": "No track data found for your account."
+}
