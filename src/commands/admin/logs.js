@@ -20,7 +20,6 @@ module.exports = {
                     ? "Bot has started locally."
                     : "Bot has started on server hosting."
             )
-            .setFooter({ text: "Ember Admin — Logs" })
             .setTimestamp();
 
         await channel.send({ embeds: [embed] });
@@ -39,7 +38,6 @@ module.exports = {
             .setColor("#ffaa00")
             .setTitle(" Bot Updated")
             .setDescription("The bot has been updated via `\\update`.")
-            .setFooter({ text: "Ember Admin — Logs" })
             .setTimestamp();
 
         await channel.send({ embeds: [embed] });

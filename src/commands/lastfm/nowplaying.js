@@ -1,76 +1,13 @@
+
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
+const SpotifyService = require("../../services/spotify");
+
 // Node-fetch v3 ESM-compatible import for CommonJS
 const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
-
-// Cache for Spotify token
-let spotifyTokenCache = {
-    token: null,
-    expiresAt: 0
-};
-
-async function getSpotifyToken() {
-    // Return cached token if still valid
-    if (spotifyTokenCache.token && Date.now() < spotifyTokenCache.expiresAt) {
-        return spotifyTokenCache.token;
-    }
-
-    const clientId = process.env.SPOTIFY_ID;
-    const clientSecret = process.env.SPOTIFY_SECRET;
-
-    if (!clientId || !clientSecret) {
-        return null;
-    }
-
-    try {
-        const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-        
-        const response = await fetch('https://accounts.spotify.com/api/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${credentials}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'grant_type=client_credentials'
-        });
-
-        if (!response.ok) return null;
-
-        const data = await response.json();
-        
-        // Cache the token (expires in 1 hour, we'll refresh 5 min early)
-        spotifyTokenCache.token = data.access_token;
-        spotifyTokenCache.expiresAt = Date.now() + ((data.expires_in - 300) * 1000);
-        
-        return data.access_token;
-    } catch (err) {
-        return null;
-    }
-}
-
-async function fetchSpotifyArtwork(trackName, artistName) {
-    try {
-        const token = await getSpotifyToken();
-        if (!token) return null;
-
-        const url = `https://api.spotify.com/v1/search?q=track:${encodeURIComponent(trackName)} artist:${encodeURIComponent(artistName)}&type=track&limit=1`;
-
-        const res = await fetch(url, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (!res.ok) return null;
-
-        const data = await res.json();
-        const images = data.tracks?.items[0]?.album?.images;
-        return images?.[0]?.url || null;
-    } catch (err) {
-        return null;
-    }
-}
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
 const MUSIC_EMOJI = "<a:emberMUSIC:1452939837203152896>";
@@ -137,7 +74,6 @@ const nowplayingLogic = {
                 `There's no LastFM account associated with ${targetUser}.\n` +
                 `Please run the \`lastfmsetup\` command to connect accounts.`
             )
-            .setFooter({ text: "Ember Status — Last.fm" })
             .setTimestamp();
     },
 
@@ -146,7 +82,7 @@ const nowplayingLogic = {
         const artist = track.artist["#text"];
         const name = track.name;
         const album = track.album["#text"] || "Unknown Album";
-        const spotifyImage = await fetchSpotifyArtwork(name, artist);
+        const spotifyImage = await SpotifyService.getTrackImage(name, artist);
 
         const trackUrl = track.url || null;
         const artistUrl = `https://www.last.fm/music/${encodeURIComponent(artist)}`;
@@ -172,7 +108,6 @@ const nowplayingLogic = {
                 { name: "Artist", value: `[${artist}](${artistUrl})`, inline: true },
                 { name: "Album", value: `[${album}](${albumUrl})`, inline: true },
             )
-            .setFooter({ text: `Played: ${playcount} times • ${username}` })
             .setTimestamp();
 
         if (spotifyImage) embed.setThumbnail(spotifyImage);

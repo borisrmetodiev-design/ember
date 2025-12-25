@@ -41,7 +41,6 @@ module.exports = {
                 .setColor("#ff6600")
                 .setAuthor({ name: `${targetUser.username}'s Banner`, iconURL: targetUser.displayAvatarURL({ dynamic: true }) })
                 .setImage(spoiler ? `||${bannerUrl}||` : bannerUrl)
-                .setFooter({ text: "Ember Utility — Banner" })
                 .setTimestamp();
 
             await interaction.reply({ embeds: [embed], ephemeral });
@@ -83,7 +82,6 @@ module.exports = {
                 .setColor("#ff6600")
                 .setAuthor({ name: `${targetUser.username}'s Banner`, iconURL: targetUser.displayAvatarURL({ dynamic: true }) })
                 .setImage(spoiler ? `||${bannerUrl}||` : bannerUrl)
-                .setFooter({ text: "Ember Utility — Banner" })
                 .setTimestamp();
 
             await message.reply({ embeds: [embed] });

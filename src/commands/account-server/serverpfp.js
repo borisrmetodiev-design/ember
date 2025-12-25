@@ -11,7 +11,6 @@ const serverPfpData = {
                 .setColor("#ff6600")
                 .setAuthor({ name: `${guild.name}'s Icon` })
                 .setImage(spoiler ? `||${iconUrl}||` : iconUrl)
-                .setFooter({ text: `Guild ID: ${guild.id} • Ember Utility — Server Icon` })
                 .setTimestamp();
 
             if (isSlash) {

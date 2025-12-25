@@ -69,7 +69,6 @@ async function fetchLastFMUserInfo(username) {
 async function buildConfirmationEmbed(mode, username, oldUsername = null) {
     const embed = new EmbedBuilder()
         .setColor("#ff6600")
-        .setFooter({ text: "Ember Status — Last.fm" })
         .setTimestamp();
 
     // Fetch user info for link and replace modes
@@ -147,7 +146,6 @@ async function buildConfirmationEmbed(mode, username, oldUsername = null) {
 function buildSuccessEmbed(mode, username) {
     const embed = new EmbedBuilder()
         .setColor("#00ff00")
-        .setFooter({ text: "Ember Status — Last.fm" })
         .setTimestamp();
 
     if (mode === "link") {
@@ -252,7 +250,6 @@ module.exports = {
                             `You don't have a Last.fm account linked yet.\n\n` +
                             `Use \`/lastfmsetup mode:link\` to link one.`
                         )
-                        .setFooter({ text: "Ember Status — Last.fm" })
                         .setTimestamp();
                     return interaction.reply({ embeds: [embed], ephemeral: true });
                 }
@@ -265,7 +262,6 @@ module.exports = {
                             `You don't have a Last.fm account linked.\n\n` +
                             `Use \`/lastfmsetup mode:link\` to link one.`
                         )
-                        .setFooter({ text: "Ember Status — Last.fm" })
                         .setTimestamp();
                     return interaction.reply({ embeds: [embed], ephemeral: true });
                 }
@@ -326,7 +322,6 @@ module.exports = {
                             `You already have a Last.fm account linked: \`${currentUsername}\`\n\n` +
                             `Use \`\\\\lastfmsetup replace <username>\` to change it.`
                         )
-                        .setFooter({ text: "Ember Status — Last.fm" })
                         .setTimestamp();
                     return message.reply({ embeds: [embed] });
                 }
@@ -340,7 +335,6 @@ module.exports = {
                             `You don't have a Last.fm account linked yet.\n\n` +
                             `Use \`\\\\lastfmsetup link <username>\` to link one.`
                         )
-                        .setFooter({ text: "Ember Status — Last.fm" })
                         .setTimestamp();
                     return message.reply({ embeds: [embed] });
                 }
@@ -353,7 +347,6 @@ module.exports = {
                             `You don't have a Last.fm account linked.\n\n` +
                             `Use \`\\\\lastfmsetup link <username>\` to link one.`
                         )
-                        .setFooter({ text: "Ember Status — Last.fm" })
                         .setTimestamp();
                     return message.reply({ embeds: [embed] });
                 }

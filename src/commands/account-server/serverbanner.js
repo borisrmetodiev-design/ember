@@ -11,7 +11,6 @@ const serverBannerData = {
                 .setColor("#ff6600")
                 .setAuthor({ name: `${guild.name}'s Banner` })
                 .setImage(spoiler ? `||${bannerUrl}||` : bannerUrl)
-                .setFooter({ text: `Guild ID: ${guild.id} • Ember Utility — Server Banner` })
                 .setTimestamp();
 
             if (isSlash) {

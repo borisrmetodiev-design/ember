@@ -21,7 +21,6 @@ function buildErrorEmbed(code, err) {
         .setColor("#ff0000")
         .setTitle(`${ERROR_EMOJI} Error ${code}`)
         .setDescription(ERROR_MAP[code] || "Unknown error.")
-        .setFooter({ text: "Ember Utility — Error" })
         .setTimestamp();
 
     let components = [];

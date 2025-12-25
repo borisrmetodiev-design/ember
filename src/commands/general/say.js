@@ -28,7 +28,6 @@ module.exports = {
                     .setColor("#ff3300")
                     .setTitle("Error 004")
                     .setDescription("Missing required arguments.\nYou must provide text for the bot to repeat.")
-                    .setFooter({ text: "Ember Status — Say Command" })
                     .setTimestamp();
 
                 return interaction.reply({ embeds: [embed], ephemeral: true });
@@ -53,7 +52,6 @@ module.exports = {
                     .setColor("#ff3300")
                     .setTitle("Error 004")
                     .setDescription("Missing required arguments.\nYou must provide text for the bot to repeat.")
-                    .setFooter({ text: "Ember Status — Say Command" })
                     .setTimestamp();
 
                 return message.reply({ embeds: [embed] });

@@ -90,7 +90,6 @@ module.exports = {
                     `**Reloaded:** \`${reloaded}\`\n` +
                     `**Errors:** \`${errors}\``
                 )
-                .setFooter({ text: "Ember Status — Developer Tools" })
                 .setTimestamp();
 
             try {

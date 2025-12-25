@@ -113,6 +113,18 @@ client.on("interactionCreate", async interaction => {
             }
         }
 
+        // Autocomplete
+        if (interaction.isAutocomplete()) {
+            const command = client.slashCommands.get(interaction.commandName);
+            if (!command || !command.autocomplete) return;
+
+            try {
+                await command.autocomplete(interaction);
+            } catch (err) {
+                console.error(`Autocomplete error for ${interaction.commandName}:`, err);
+            }
+        }
+
         // Error detail button
         if (interaction.isButton() && interaction.customId.startsWith("error_details_")) {
             await handleErrorButton(interaction);

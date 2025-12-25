@@ -29,7 +29,6 @@ const pfpData = {
                     iconURL: target.displayAvatarURL({ dynamic: true })
                 })
                 .setImage(avatarUrl)
-                .setFooter({ text: "Ember Utility — Profile Picture" })
                 .setTimestamp();
 
             if (isSlash) {

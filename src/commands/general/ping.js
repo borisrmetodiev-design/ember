@@ -32,9 +32,7 @@ module.exports = {
                     { name: "Hosting", value: `\`${hostedOn}\``, inline: true }
                 )
                 .setTimestamp()
-                .setFooter({
-                    text: `Ember Status - Requested by ${requester}`
-                });
+                .setTimestamp();
         } catch (err) {
             throw { code: "015", err }; // External APIs failed to load (os/process info)
         }
