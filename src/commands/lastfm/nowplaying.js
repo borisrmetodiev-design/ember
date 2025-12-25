@@ -22,7 +22,6 @@ async function getSpotifyToken() {
     const clientSecret = process.env.SPOTIFY_SECRET;
 
     if (!clientId || !clientSecret) {
-        console.log("No Spotify credentials found, skipping token fetch");
         return null;
     }
 
@@ -38,10 +37,7 @@ async function getSpotifyToken() {
             body: 'grant_type=client_credentials'
         });
 
-        if (!response.ok) {
-            console.log(`Failed to get Spotify token: ${response.status} ${response.statusText}`);
-            return null;
-        }
+        if (!response.ok) return null;
 
         const data = await response.json();
         
@@ -49,10 +45,8 @@ async function getSpotifyToken() {
         spotifyTokenCache.token = data.access_token;
         spotifyTokenCache.expiresAt = Date.now() + ((data.expires_in - 300) * 1000);
         
-        console.log("Successfully generated new Spotify access token");
         return data.access_token;
     } catch (err) {
-        console.error("Error getting Spotify token:", err.message);
         return null;
     }
 }
@@ -60,10 +54,7 @@ async function getSpotifyToken() {
 async function fetchSpotifyArtwork(trackName, artistName) {
     try {
         const token = await getSpotifyToken();
-        if (!token) {
-            console.log("No Spotify token available, skipping artwork fetch");
-            return null;
-        }
+        if (!token) return null;
 
         const url = `https://api.spotify.com/v1/search?q=track:${encodeURIComponent(trackName)} artist:${encodeURIComponent(artistName)}&type=track&limit=1`;
 
@@ -71,32 +62,17 @@ async function fetchSpotifyArtwork(trackName, artistName) {
             headers: { Authorization: `Bearer ${token}` }
         });
         
-        if (!res.ok) {
-            console.log(`Spotify API error: ${res.status} ${res.statusText}`);
-            return null;
-        }
+        if (!res.ok) return null;
 
         const data = await res.json();
-
         const images = data.tracks?.items[0]?.album?.images;
-        const imageUrl = images?.[0]?.url || null;
-        
-        if (imageUrl) {
-            console.log(`Found Spotify artwork for: ${trackName} by ${artistName}`);
-        } else {
-            console.log(`No Spotify artwork found for: ${trackName} by ${artistName}`);
-        }
-        
-        return imageUrl; // largest image (usually 640–800px)
+        return images?.[0]?.url || null;
     } catch (err) {
-        console.error("Error fetching Spotify artwork:", err.message);
         return null;
     }
 }
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
-
-// Animated emoji
 const MUSIC_EMOJI = "<a:emberMUSIC:1452939837203152896>";
 
 function loadDB() {
@@ -104,20 +80,7 @@ function loadDB() {
     return JSON.parse(fs.readFileSync(dataPath, "utf8"));
 }
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("nowplaying")
-        .setDescription("Shows the current or last played track from Last.fm")
-        .addUserOption(option =>
-            option
-                .setName("user")
-                .setDescription("The user to check (optional)")
-                .setRequired(false)
-        ),
-
-    name: "nowplaying",
-    aliases: ["np", "fm", "nowplaying"],
-
+const nowplayingLogic = {
     async getLastFMUsername(discordId) {
         const db = loadDB();
         return db.users[discordId] || null;
@@ -125,10 +88,9 @@ module.exports = {
 
     async fetchNowPlaying(username) {
         const apiKey = process.env.LASTFM_API_KEY;
-        if (!apiKey) throw { code: "006" }; // LastFM API authentication failed
+        if (!apiKey) throw { code: "006" };
 
         try {
-            // Get most recent track
             const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(
                 username
             )}&api_key=${apiKey}&format=json&limit=1`;
@@ -137,12 +99,10 @@ module.exports = {
             const data = await res.json();
 
             if (!data.recenttracks || !data.recenttracks.track || data.recenttracks.track.length === 0) {
-                throw { code: "020" }; // No track data found at all
+                throw { code: "020" };
             }
 
             const track = data.recenttracks.track[0];
-
-            // Fetch playcount
             const infoUrl = `https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=${apiKey}&artist=${encodeURIComponent(
                 track.artist["#text"]
             )}&track=${encodeURIComponent(track.name)}&username=${encodeURIComponent(
@@ -151,7 +111,6 @@ module.exports = {
 
             const infoRes = await fetch(infoUrl);
             const infoData = await infoRes.json();
-
             const playcount = infoData.track?.userplaycount || 0;
 
             return {
@@ -162,7 +121,7 @@ module.exports = {
             };
         } catch (err) {
             if (err.code) throw err;
-            throw { code: "005", err }; // LastFM data fetch failed
+            throw { code: "005", err };
         }
     },
 
@@ -184,7 +143,6 @@ module.exports = {
 
     async buildTrackEmbed(info, targetUser, username) {
         const { track, playcount, isNowPlaying, playedAt } = info;
-
         const artist = track.artist["#text"];
         const name = track.name;
         const album = track.album["#text"] || "Unknown Album";
@@ -194,7 +152,6 @@ module.exports = {
         const artistUrl = `https://www.last.fm/music/${encodeURIComponent(artist)}`;
         const albumUrl = `https://www.last.fm/music/${encodeURIComponent(artist)}/${encodeURIComponent(album)}`;
 
-        // Header text with timestamp
         let headerText;
         if (isNowPlaying) {
             headerText = `${MUSIC_EMOJI} Now Playing`;
@@ -211,94 +168,67 @@ module.exports = {
             })
             .setTitle(headerText)
             .addFields(
-                {
-                    name: "Song",
-                    value: trackUrl ? `[${name}](${trackUrl})` : name,
-                    inline: true
-                },
-                {
-                    name: "Artist",
-                    value: `[${artist}](${artistUrl})`,
-                    inline: true
-                },
-                {
-                    name: "Album",
-                    value: `[${album}](${albumUrl})`,
-                    inline: true
-                },
+                { name: "Song", value: trackUrl ? `[${name}](${trackUrl})` : name, inline: true },
+                { name: "Artist", value: `[${artist}](${artistUrl})`, inline: true },
+                { name: "Album", value: `[${album}](${albumUrl})`, inline: true },
             )
-            .setFooter({
-                text: `Played: ${playcount} times • ${username}`
-            })
+            .setFooter({ text: `Played: ${playcount} times • ${username}` })
             .setTimestamp();
 
         if (spotifyImage) embed.setThumbnail(spotifyImage);
-
         return embed;
     },
 
+    async execute(interactionOrMessage, isSlash, targetUser) {
+        const loadingEmoji = process.env.emberLOAD;
+        const user = targetUser || (isSlash ? interactionOrMessage.user : interactionOrMessage.author);
+        
+        let response;
+        if (isSlash) {
+            response = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching Last.fm data...`, fetchReply: true });
+        } else {
+            response = await interactionOrMessage.reply(`${loadingEmoji} Fetching Last.fm data...`);
+        }
+
+        const username = await this.getLastFMUsername(user.id);
+
+        if (!username) {
+            const embed = this.buildNoAccountEmbed(user);
+            return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [embed] }) : response.edit({ content: "", embeds: [embed] });
+        }
+
+        const info = await this.fetchNowPlaying(username);
+        const embed = await this.buildTrackEmbed(info, user, username);
+        
+        return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [embed] }) : response.edit({ content: "", embeds: [embed] });
+    }
+};
+
+const commandNames = ["np", "fm", "nowplaying"];
+
+module.exports = commandNames.map(name => ({
+    data: new SlashCommandBuilder()
+        .setName(name)
+        .setDescription(`Shows the current or last played track from Last.fm (${name})`)
+        .addUserOption(option =>
+            option.setName("user").setDescription("The user to check (optional)").setRequired(false)
+        ),
+    name: name,
+    aliases: commandNames.filter(n => n !== name),
     async executeSlash(interaction) {
         try {
-            const loadingEmoji = process.env.emberLOAD;
             const targetUser = interaction.options.getUser("user") || interaction.user;
-
-            await interaction.reply({
-                content: `${loadingEmoji} Fetching Last.fm data...`,
-                ephemeral: false
-            });
-
-            const username = await this.getLastFMUsername(targetUser.id);
-
-            if (!username) {
-                return interaction.editReply({
-                    content: "",
-                    embeds: [this.buildNoAccountEmbed(targetUser)]
-                });
-            }
-
-            const info = await this.fetchNowPlaying(username);
-
-            const embed = await this.buildTrackEmbed(info, targetUser, username);
-
-            const sent = await interaction.editReply({
-                content: "",
-                embeds: [embed]
-            });
-
-
+            await nowplayingLogic.execute(interaction, true, targetUser);
         } catch (err) {
             throw err.code ? err : { code: "005", err };
         }
     },
-
     async executePrefix(message, args) {
         try {
-            const loadingEmoji = process.env.emberLOAD;
             const targetUser = message.mentions.users.first() || message.author;
-
-            const sent = await message.reply(`${loadingEmoji} Fetching Last.fm data...`);
-
-            const username = await this.getLastFMUsername(targetUser.id);
-
-            if (!username) {
-                return sent.edit({
-                    content: "",
-                    embeds: [this.buildNoAccountEmbed(targetUser)]
-                });
-            }
-
-            const info = await this.fetchNowPlaying(username);
-
-            const embed = await this.buildTrackEmbed(info, targetUser, username);
-
-            const edited = await sent.edit({
-                content: "",
-                embeds: [embed]
-            });
-
-
+            await nowplayingLogic.execute(message, false, targetUser);
         } catch (err) {
             throw err.code ? err : { code: "005", err };
         }
     }
-};
+}));

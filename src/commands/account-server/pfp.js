@@ -1,47 +1,23 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("pfp")
-        .setDescription("Get the profile picture of a user")
-        .addUserOption(option =>
-            option.setName("user")
-                .setDescription("The user to get the profile picture of")
-                .setRequired(false)
-        )
-        .addBooleanOption(option =>
-            option.setName("ephemeral")
-                .setDescription("Send the avatar as ephemeral")
-                .setRequired(false)
-        )
-        .addBooleanOption(option =>
-            option.setName("spoiler")
-                .setDescription("Send the avatar as a spoiler (attachments only)")
-                .setRequired(false)
-        )
-        .addBooleanOption(option =>
-            option.setName("server")
-                .setDescription("Show the server avatar if available")
-                .setRequired(false)
-        ),
-
+const pfpData = {
     name: "pfp",
+    description: "Get the profile picture of a user",
     aliases: ["avatar", "profilepic"],
+    async execute(target, isSlash, interactionOrMessage, options = {}) {
+        const { ephemeral = false, server = false } = options;
+        const guild = isSlash ? interactionOrMessage.guild : interactionOrMessage.guild;
+        const user = isSlash ? interactionOrMessage.user : interactionOrMessage.author;
 
-    async executeSlash(interaction) {
         try {
-            const targetUser = interaction.options.getUser("user") || interaction.user;
-            const ephemeral = interaction.options.getBoolean("ephemeral") || false;
-            const server = interaction.options.getBoolean("server") || false;
-
             let avatarUrl;
-            if (server && interaction.guild) {
-                const member = await interaction.guild.members.fetch(targetUser.id);
+            if (server && guild) {
+                const member = await guild.members.fetch(target.id);
                 avatarUrl = member.avatar
                     ? member.displayAvatarURL({ size: 4096, dynamic: true })
-                    : targetUser.displayAvatarURL({ size: 4096, dynamic: true });
+                    : target.displayAvatarURL({ size: 4096, dynamic: true });
             } else {
-                avatarUrl = targetUser.displayAvatarURL({ size: 4096, dynamic: true });
+                avatarUrl = target.displayAvatarURL({ size: 4096, dynamic: true });
             }
 
             if (!avatarUrl) throw { code: "003" };
@@ -49,21 +25,58 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor("#ff6600")
                 .setAuthor({
-                    name: `${targetUser.username}'s Avatar`,
-                    iconURL: targetUser.displayAvatarURL({ dynamic: true })
+                    name: `${target.username}'s Avatar`,
+                    iconURL: target.displayAvatarURL({ dynamic: true })
                 })
                 .setImage(avatarUrl)
                 .setFooter({ text: "Ember Utility — Profile Picture" })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral });
+            if (isSlash) {
+                await interactionOrMessage.reply({ embeds: [embed], ephemeral });
+            } else {
+                await interactionOrMessage.reply({ embeds: [embed] });
+            }
         } catch (err) {
             throw err.code ? err : { code: "004", err };
         }
-    },
+    }
+};
 
-    async executePrefix(message, args) {
-        try {
+const commonOptions = (builder) => builder
+    .addUserOption(option =>
+        option.setName("user")
+            .setDescription("The user to get the profile picture of")
+            .setRequired(false)
+    )
+    .addBooleanOption(option =>
+        option.setName("ephemeral")
+            .setDescription("Send the avatar as ephemeral")
+            .setRequired(false)
+    )
+    .addBooleanOption(option =>
+        option.setName("spoiler")
+            .setDescription("Send the avatar as a spoiler (attachments only)")
+            .setRequired(false)
+    )
+    .addBooleanOption(option =>
+        option.setName("server")
+            .setDescription("Show the server avatar if available")
+            .setRequired(false)
+    );
+
+module.exports = [
+    {
+        data: commonOptions(new SlashCommandBuilder().setName("pfp").setDescription("Get the profile picture of a user")),
+        name: "pfp",
+        aliases: ["avatar", "profilepic"],
+        async executeSlash(interaction) {
+            const targetUser = interaction.options.getUser("user") || interaction.user;
+            const ephemeral = interaction.options.getBoolean("ephemeral") || false;
+            const server = interaction.options.getBoolean("server") || false;
+            await pfpData.execute(targetUser, true, interaction, { ephemeral, server });
+        },
+        async executePrefix(message, args) {
             let targetUser;
             if (message.mentions.users.size > 0) {
                 targetUser = message.mentions.users.first();
@@ -76,101 +89,21 @@ module.exports = {
             } else {
                 targetUser = message.author;
             }
-
             const server = args.includes("--server");
-
-            let avatarUrl;
-            if (server && message.guild) {
-                const member = await message.guild.members.fetch(targetUser.id);
-                avatarUrl = member.avatar
-                    ? member.displayAvatarURL({ size: 4096, dynamic: true })
-                    : targetUser.displayAvatarURL({ size: 4096, dynamic: true });
-            } else {
-                avatarUrl = targetUser.displayAvatarURL({ size: 4096, dynamic: true });
-            }
-
-            if (!avatarUrl) throw { code: "003" };
-
-            const embed = new EmbedBuilder()
-                .setColor("#ff6600")
-                .setAuthor({
-                    name: `${targetUser.username}'s Avatar`,
-                    iconURL: targetUser.displayAvatarURL({ dynamic: true })
-                })
-                .setImage(avatarUrl)
-                .setFooter({ text: "Ember Utility — Profile Picture" })
-                .setTimestamp();
-
-            await message.reply({ embeds: [embed] });
-        } catch (err) {
-            throw err.code ? err : { code: "004", err };
+            await pfpData.execute(targetUser, false, message, { server });
         }
-    }
-};
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("avatar")
-        .setDescription("Get the profile picture of a user")
-        .addUserOption(option =>
-            option.setName("user")
-                .setDescription("The user to get the profile picture of")
-                .setRequired(false)
-        )
-        .addBooleanOption(option =>
-            option.setName("ephemeral")
-                .setDescription("Send the avatar as ephemeral")
-                .setRequired(false)
-        )
-        .addBooleanOption(option =>
-            option.setName("spoiler")
-                .setDescription("Send the avatar as a spoiler (attachments only)")
-                .setRequired(false)
-        )
-        .addBooleanOption(option =>
-            option.setName("server")
-                .setDescription("Show the server avatar if available")
-                .setRequired(false)
-        ),
-
-    name: "pfp",
-    aliases: ["avatar", "profilepic"],
-
-    async executeSlash(interaction) {
-        try {
+    },
+    {
+        data: commonOptions(new SlashCommandBuilder().setName("avatar").setDescription("Get the profile picture of a user")),
+        name: "avatar",
+        aliases: ["pfp", "profilepic"],
+        async executeSlash(interaction) {
             const targetUser = interaction.options.getUser("user") || interaction.user;
             const ephemeral = interaction.options.getBoolean("ephemeral") || false;
             const server = interaction.options.getBoolean("server") || false;
-
-            let avatarUrl;
-            if (server && interaction.guild) {
-                const member = await interaction.guild.members.fetch(targetUser.id);
-                avatarUrl = member.avatar
-                    ? member.displayAvatarURL({ size: 4096, dynamic: true })
-                    : targetUser.displayAvatarURL({ size: 4096, dynamic: true });
-            } else {
-                avatarUrl = targetUser.displayAvatarURL({ size: 4096, dynamic: true });
-            }
-
-            if (!avatarUrl) throw { code: "003" };
-
-            const embed = new EmbedBuilder()
-                .setColor("#ff6600")
-                .setAuthor({
-                    name: `${targetUser.username}'s Avatar`,
-                    iconURL: targetUser.displayAvatarURL({ dynamic: true })
-                })
-                .setImage(avatarUrl)
-                .setFooter({ text: "Ember Utility — Profile Picture" })
-                .setTimestamp();
-
-            await interaction.reply({ embeds: [embed], ephemeral });
-        } catch (err) {
-            throw err.code ? err : { code: "004", err };
-        }
-    },
-
-    async executePrefix(message, args) {
-        try {
+            await pfpData.execute(targetUser, true, interaction, { ephemeral, server });
+        },
+        async executePrefix(message, args) {
             let targetUser;
             if (message.mentions.users.size > 0) {
                 targetUser = message.mentions.users.first();
@@ -183,34 +116,8 @@ module.exports = {
             } else {
                 targetUser = message.author;
             }
-
             const server = args.includes("--server");
-
-            let avatarUrl;
-            if (server && message.guild) {
-                const member = await message.guild.members.fetch(targetUser.id);
-                avatarUrl = member.avatar
-                    ? member.displayAvatarURL({ size: 4096, dynamic: true })
-                    : targetUser.displayAvatarURL({ size: 4096, dynamic: true });
-            } else {
-                avatarUrl = targetUser.displayAvatarURL({ size: 4096, dynamic: true });
-            }
-
-            if (!avatarUrl) throw { code: "003" };
-
-            const embed = new EmbedBuilder()
-                .setColor("#ff6600")
-                .setAuthor({
-                    name: `${targetUser.username}'s Avatar`,
-                    iconURL: targetUser.displayAvatarURL({ dynamic: true })
-                })
-                .setImage(avatarUrl)
-                .setFooter({ text: "Ember Utility — Profile Picture" })
-                .setTimestamp();
-
-            await message.reply({ embeds: [embed] });
-        } catch (err) {
-            throw err.code ? err : { code: "004", err };
+            await pfpData.execute(targetUser, false, message, { server });
         }
     }
-};
+];

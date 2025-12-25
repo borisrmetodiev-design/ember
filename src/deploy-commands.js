@@ -12,16 +12,19 @@ for (const category of categories) {
     const files = fs.readdirSync(categoryPath).filter(f => f.endsWith(".js"));
 
     for (const file of files) {
-        const command = require(path.join(categoryPath, file));
+        const loaded = require(path.join(categoryPath, file));
+        const items = Array.isArray(loaded) ? loaded : [loaded];
 
-        if (command.data) {
-            const json = command.data.toJSON();
+        for (const command of items) {
+            if (command.data) {
+                const json = command.data.toJSON();
 
-            // ⭐ Required for DM slash commands + user installs
-            json.integration_types = [0, 1]; // 0 = Guild Install, 1 = User Install
-            json.contexts = [0, 1, 2];       // 0 = Guild, 1 = DM, 2 = Private Channel
+                // ⭐ Required for DM slash commands + user installs
+                json.integration_types = [0, 1]; // 0 = Guild Install, 1 = User Install
+                json.contexts = [0, 1, 2];       // 0 = Guild, 1 = DM, 2 = Private Channel
 
-            commands.push(json);
+                commands.push(json);
+            }
         }
     }
 }
