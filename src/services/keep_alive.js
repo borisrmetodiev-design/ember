@@ -10,7 +10,7 @@ function startKeepAliveServer() {
 
   try {
     app.listen(PORT, () => {
-      console.log(`✅ Web server running on port ${PORT}`);
+      console.log(`Web server running on port ${PORT}`);
     });
   } catch (err) {
     console.error('Failed to start keep-alive server:', err);

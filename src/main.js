@@ -78,7 +78,7 @@ for (const category of categories) {
 }
 
 client.once("ready", async () => {
-    console.log(`🔥 Logged in as ${client.user.tag}`);
+    console.log(`Logged in as ${client.user.tag}`);
     await logs.sendStartupLog(client);
 });
 
@@ -113,6 +113,51 @@ client.on("interactionCreate", async interaction => {
         // Error detail button
         if (interaction.isButton() && interaction.customId.startsWith("error_details_")) {
             await handleErrorButton(interaction);
+        }
+
+        // Last.fm confirmation button
+        if (interaction.isButton() && interaction.customId.startsWith("lastfm_confirm_")) {
+            const pendingAction = global.lastfmPendingActions?.[interaction.customId];
+
+            if (!pendingAction) {
+                return interaction.reply({
+                    content: "This confirmation has expired. Please run the command again.",
+                    flags: MessageFlags.Ephemeral
+                });
+            }
+
+            // Check if the button clicker is the original user
+            if (interaction.user.id !== pendingAction.userId) {
+                return interaction.reply({
+                    content: "You don't have permission to confirm this action.",
+                    flags: MessageFlags.Ephemeral
+                });
+            }
+
+            // Check if expired
+            if (Date.now() > pendingAction.expiresAt) {
+                delete global.lastfmPendingActions[interaction.customId];
+                return interaction.reply({
+                    content: "This confirmation has expired. Please run the command again.",
+                    flags: MessageFlags.Ephemeral
+                });
+            }
+
+            // Execute the action
+            try {
+                const lastfmSetup = require("./commands/lastfm/lastfmsetup");
+                await lastfmSetup.handleConfirmation(
+                    interaction,
+                    pendingAction.mode,
+                    pendingAction.username,
+                    pendingAction.userId
+                );
+                delete global.lastfmPendingActions[interaction.customId];
+            } catch (err) {
+                console.error("Error handling Last.fm confirmation:", err);
+                const { embed, components } = buildErrorEmbed(err.code || "005", err.err || err);
+                await interaction.update({ embeds: [embed], components });
+            }
         }
     } catch (err) {
         console.error("Unhandled interaction error:", err);

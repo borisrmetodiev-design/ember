@@ -26,7 +26,7 @@ module.exports = {
 
     name: "imagetogif",
 
-    // 🔥 Shared converter
+    // Shared converter
     async convertToGif(buffer) {
         try {
             return await sharp(buffer, { animated: false })
@@ -40,7 +40,7 @@ module.exports = {
         }
     },
 
-    // 🔥 Slash command
+    // Slash command
     async executeSlash(interaction) {
         try {
             const loadingEmoji = process.env.emberLOAD;
@@ -85,7 +85,7 @@ module.exports = {
         }
     },
 
-    // 🔥 Prefix command
+    // Prefix command
     async executePrefix(message) {
         try {
             const loadingEmoji = process.env.emberLOAD;

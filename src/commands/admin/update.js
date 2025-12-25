@@ -9,7 +9,7 @@ module.exports = {
 
     async executePrefix(message, args, client) {
         try {
-            // ✅ Guild check
+            // Guild check
             if (!message.guild) throw { code: "001" }; // Bot not in Guild / missing access
 
             const authorId = message.author.id;
@@ -18,10 +18,10 @@ module.exports = {
                 process.env.BORIS_ID_2
             ].filter(Boolean));
 
-            // ✅ Permission check
+            // Permission check
             if (!allowedIds.has(authorId)) throw { code: "017" }; // Permission denied
 
-            // ✅ Validate env IDs
+            // Validate env IDs
             for (const id of allowedIds) {
                 if (!/^\d{17,19}$/.test(id)) throw { code: "009" }; // Invalid User ID format
             }
@@ -84,7 +84,7 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setColor("#ff6600")
-                .setTitle("🔄 Commands Reloaded")
+                .setTitle("Commands Reloaded")
                 .setDescription(
                     `All command files have been hot‑reloaded.\n\n` +
                     `**Reloaded:** \`${reloaded}\`\n` +

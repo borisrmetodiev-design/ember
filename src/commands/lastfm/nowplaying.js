@@ -49,7 +49,7 @@ async function getSpotifyToken() {
         spotifyTokenCache.token = data.access_token;
         spotifyTokenCache.expiresAt = Date.now() + ((data.expires_in - 300) * 1000);
         
-        console.log("✅ Successfully generated new Spotify access token");
+        console.log("Successfully generated new Spotify access token");
         return data.access_token;
     } catch (err) {
         console.error("Error getting Spotify token:", err.message);
@@ -82,9 +82,9 @@ async function fetchSpotifyArtwork(trackName, artistName) {
         const imageUrl = images?.[0]?.url || null;
         
         if (imageUrl) {
-            console.log(`✅ Found Spotify artwork for: ${trackName} by ${artistName}`);
+            console.log(`Found Spotify artwork for: ${trackName} by ${artistName}`);
         } else {
-            console.log(`❌ No Spotify artwork found for: ${trackName} by ${artistName}`);
+            console.log(`No Spotify artwork found for: ${trackName} by ${artistName}`);
         }
         
         return imageUrl; // largest image (usually 640–800px)
@@ -265,14 +265,7 @@ module.exports = {
                 embeds: [embed]
             });
 
-            if (interaction.guild) {
-                try {
-                    await sent.react("👍");
-                    await sent.react("👎");
-                } catch (e) {
-                    console.error("Failed to add reactions:", e);
-                }
-            }
+
         } catch (err) {
             throw err.code ? err : { code: "005", err };
         }
@@ -303,14 +296,7 @@ module.exports = {
                 embeds: [embed]
             });
 
-            if (message.guild) {
-                try {
-                    await edited.react("👍");
-                    await edited.react("👎");
-                } catch (e) {
-                    console.error("Failed to add reactions:", e);
-                }
-            }
+
         } catch (err) {
             throw err.code ? err : { code: "005", err };
         }

@@ -26,7 +26,7 @@ module.exports = {
             if (err.code === "004") {
                 const embed = new EmbedBuilder()
                     .setColor("#ff3300")
-                    .setTitle("❌ Error 004")
+                    .setTitle("Error 004")
                     .setDescription("Missing required arguments.\nYou must provide text for the bot to repeat.")
                     .setFooter({ text: "Ember Status — Say Command" })
                     .setTimestamp();
@@ -51,7 +51,7 @@ module.exports = {
             if (err.code === "004") {
                 const embed = new EmbedBuilder()
                     .setColor("#ff3300")
-                    .setTitle("❌ Error 004")
+                    .setTitle("Error 004")
                     .setDescription("Missing required arguments.\nYou must provide text for the bot to repeat.")
                     .setFooter({ text: "Ember Status — Say Command" })
                     .setTimestamp();
