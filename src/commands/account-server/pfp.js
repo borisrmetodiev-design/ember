@@ -67,7 +67,7 @@ const commonOptions = (builder) => builder
 module.exports = [
     {
         data: commonOptions(new SlashCommandBuilder().setName("pfp").setDescription("Get the profile picture of a user")),
-        name: "pfp",
+        name: "pfp",  
         aliases: ["avatar", "profilepic"],
         async executeSlash(interaction) {
             const targetUser = interaction.options.getUser("user") || interaction.user;
