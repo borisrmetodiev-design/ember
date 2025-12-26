@@ -91,7 +91,7 @@ module.exports = [
             const server = args.includes("--server");
             await pfpData.execute(targetUser, false, message, { server });
         }
-    },
+    },   
     {
         data: commonOptions(new SlashCommandBuilder().setName("avatar").setDescription("Get the profile picture of a user")),
         name: "avatar",
