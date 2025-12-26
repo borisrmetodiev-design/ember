@@ -11,9 +11,6 @@ module.exports = {
             option.setName("ephemeral").setDescription("Send the banner as ephemeral").setRequired(false)
         )
         .addBooleanOption(option =>
-            option.setName("spoiler").setDescription("Send the banner as a spoiler").setRequired(false)
-        )
-        .addBooleanOption(option =>
             option.setName("server").setDescription("Show the server banner if available").setRequired(false)
         ),
 
@@ -22,7 +19,6 @@ module.exports = {
     async executeSlash(interaction) {
         const targetUser = interaction.options.getUser("user") || interaction.user;
         const ephemeral = interaction.options.getBoolean("ephemeral") || false;
-        const spoiler = interaction.options.getBoolean("spoiler") || false;
         const server = interaction.options.getBoolean("server") || false;
 
         try {
@@ -40,7 +36,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor("#ff6600")
                 .setAuthor({ name: `${targetUser.username}'s Banner`, iconURL: targetUser.displayAvatarURL({ dynamic: true }) })
-                .setImage(spoiler ? `||${bannerUrl}||` : bannerUrl)
+                .setImage(bannerUrl)
                 .setTimestamp();
 
             await interaction.reply({ embeds: [embed], ephemeral });
@@ -64,7 +60,6 @@ module.exports = {
                 targetUser = message.author;
             }
 
-            const spoiler = args.includes("--spoiler");
             const server = args.includes("--server");
 
             let bannerUrl;
@@ -81,7 +76,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor("#ff6600")
                 .setAuthor({ name: `${targetUser.username}'s Banner`, iconURL: targetUser.displayAvatarURL({ dynamic: true }) })
-                .setImage(spoiler ? `||${bannerUrl}||` : bannerUrl)
+                .setImage(bannerUrl)
                 .setTimestamp();
 
             await message.reply({ embeds: [embed] });

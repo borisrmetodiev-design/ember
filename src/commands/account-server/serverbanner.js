@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 const serverBannerData = {
     async execute(guild, isSlash, interactionOrMessage, options = {}) {
-        const { spoiler = false, ephemeral = false } = options;
+        const { ephemeral = false } = options;
         try {
             const bannerUrl = guild.bannerURL({ size: 4096, dynamic: true });
             if (!bannerUrl) throw { code: "003" };
@@ -10,7 +10,7 @@ const serverBannerData = {
             const embed = new EmbedBuilder()
                 .setColor("#ff6600")
                 .setAuthor({ name: `${guild.name}'s Banner` })
-                .setImage(spoiler ? `||${bannerUrl}||` : bannerUrl)
+                .setImage(bannerUrl)
                 .setTimestamp();
 
             if (isSlash) {
@@ -27,9 +27,6 @@ const serverBannerData = {
 const commonOptions = (builder) => builder
     .addBooleanOption(option =>
         option.setName("ephemeral").setDescription("Send the server banner as ephemeral").setRequired(false)
-    )
-    .addBooleanOption(option =>
-        option.setName("spoiler").setDescription("Send the server banner as a spoiler").setRequired(false)
     );
 
 const commandNames = ["guildbanner", "serverbanner"];
@@ -40,11 +37,9 @@ module.exports = commandNames.map(name => ({
     aliases: commandNames.filter(n => n !== name),
     async executeSlash(interaction) {
         const ephemeral = interaction.options.getBoolean("ephemeral") || false;
-        const spoiler = interaction.options.getBoolean("spoiler") || false;
-        await serverBannerData.execute(interaction.guild, true, interaction, { ephemeral, spoiler });
+        await serverBannerData.execute(interaction.guild, true, interaction, { ephemeral });
     },
     async executePrefix(message, args) {
-        const spoiler = args.includes("--spoiler");
         let guild;
         if (args[0] && /^\d+$/.test(args[0])) {
             guild = await message.client.guilds.fetch(args[0]).catch(() => { throw { code: "001" }; });
@@ -52,6 +47,6 @@ module.exports = commandNames.map(name => ({
             guild = message.guild;
         }
         if (!guild) throw { code: "002" };
-        await serverBannerData.execute(guild, false, message, { spoiler });
+        await serverBannerData.execute(guild, false, message, {});
     }
 }));

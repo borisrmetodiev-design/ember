@@ -54,11 +54,6 @@ const commonOptions = (builder) => builder
             .setRequired(false)
     )
     .addBooleanOption(option =>
-        option.setName("spoiler")
-            .setDescription("Send the avatar as a spoiler (attachments only)")
-            .setRequired(false)
-    )
-    .addBooleanOption(option =>
         option.setName("server")
             .setDescription("Show the server avatar if available")
             .setRequired(false)
