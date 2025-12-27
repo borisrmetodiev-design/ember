@@ -31,8 +31,8 @@ module.exports = {
         try {
             return await sharp(buffer, { animated: false })
                 .gif({
-                    reoptimise: false,   // lowest compression
-                    effort: 1            // fastest, least compressed
+                    reoptimise: false,   
+                    effort: 1            
                 })
                 .toBuffer();
         } catch (err) {
