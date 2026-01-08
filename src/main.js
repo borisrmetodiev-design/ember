@@ -24,9 +24,10 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.DirectMessages
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildMessageReactions
     ],
-    partials: [Partials.Channel]
+    partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User]
 });
 
 // Prefix logic
@@ -47,6 +48,9 @@ switch (process.env.HOST_ENV) {
 // Command maps
 client.slashCommands = new Collection();
 client.prefixCommands = new Collection();
+client.snipes = new Map(); // Store deleted messages: channelId -> array of message objects
+client.editsnipes = new Map(); // Store edited messages: channelId -> array of message objects
+client.reactionsnipes = new Map(); // Store removed reactions: channelId -> array of reaction objects
 
 // Load commands
 const commandsPath = path.join(__dirname, "commands");
@@ -196,6 +200,121 @@ client.on("messageCreate", async message => {
         const { embed, components } = buildErrorEmbed(err.code || "004", err.err || err);
         await message.reply({ embeds: [embed], components });
     }
+});
+
+// Message delete handler for snipe
+client.on("messageDelete", async (message) => {
+    if (message.partial) {
+        try {
+            message = await message.fetch();
+        } catch (err) {
+            return;
+        }
+    }
+    if (!message.guild || message.author?.bot) return;
+
+    const snipes = client.snipes.get(message.channel.id) || [];
+    
+    const snipe = {
+        content: message.content,
+        author: message.author,
+        image: message.attachments.first()?.proxyURL || null,
+        timestamp: message.createdTimestamp,
+    };
+
+    snipes.unshift(snipe); // Add to beginning
+    if (snipes.length > 20) snipes.pop(); // Keep last 20
+
+    client.snipes.set(message.channel.id, snipes);
+});
+
+// Message update handler for editsnipe
+client.on("messageUpdate", async (oldMessage, newMessage) => {
+    if (oldMessage.partial) {
+        try {
+            oldMessage = await oldMessage.fetch();
+        } catch (err) {
+            return;
+        }
+    }
+    if (!oldMessage.guild || oldMessage.author?.bot || oldMessage.content === newMessage.content) return;
+
+    const editsnipes = client.editsnipes.get(oldMessage.channel.id) || [];
+    
+    const editsnipe = {
+        oldContent: oldMessage.content,
+        newContent: newMessage.content,
+        author: oldMessage.author,
+        messageId: newMessage.id,
+        channelId: newMessage.channel.id,
+        timestamp: newMessage.editedTimestamp || Date.now(),
+    };
+
+    editsnipes.unshift(editsnipe);
+    if (editsnipes.length > 20) editsnipes.pop();
+
+    client.editsnipes.set(oldMessage.channel.id, editsnipes);
+});
+
+// Reaction handlers for reactionsnipe
+client.on("messageReactionRemove", async (reaction, user) => {
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (err) {}
+    }
+    if (user.partial) {
+        try {
+            await user.fetch();
+        } catch (err) {}
+    }
+    if (user.bot || !reaction.message.guild) return;
+
+    const reactionsnipes = client.reactionsnipes.get(reaction.message.channel.id) || [];
+    
+    const reactionsnipe = {
+        user: user,
+        emoji: reaction.emoji,
+        messageId: reaction.message.id,
+        channelId: reaction.message.channel.id,
+        timestamp: Date.now(),
+        action: "removed"
+    };
+
+    reactionsnipes.unshift(reactionsnipe);
+    if (reactionsnipes.length > 20) reactionsnipes.pop();
+
+    client.reactionsnipes.set(reaction.message.channel.id, reactionsnipes);
+});
+
+client.on("messageReactionAdd", async (reaction, user) => {
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (err) {}
+    }
+    if (user.partial) {
+        try {
+            await user.fetch();
+        } catch (err) {}
+    }
+    if (user.bot || !reaction.message.guild) return;
+
+    const reactionsnipes = client.reactionsnipes.get(reaction.message.channel.id) || [];
+    
+    const reactionsnipe = {
+        user: user,
+        emoji: reaction.emoji,
+        messageId: reaction.message.id,
+        channelId: reaction.message.channel.id,
+        timestamp: Date.now(),
+        action: "added"
+    };
+
+    reactionsnipes.unshift(reactionsnipe);
+    if (reactionsnipes.length > 20) reactionsnipes.pop();
+
+    client.reactionsnipes.set(reaction.message.channel.id, reactionsnipes);
 });
 
 // Login

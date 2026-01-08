@@ -20,19 +20,37 @@ module.exports = {
     async executeSlash(interaction) {
         await interaction.deferReply();
         const url = interaction.options.getString("url");
-        const loadingEmoji = process.env.emberLOAD || "⌛";
 
         try {
             const data = await this.fetchTikTokData(url);
             if (!data) throw new Error("Could not fetch TikTok data.");
 
             const embed = this.buildEmbed(data);
-            const videoAttachment = new AttachmentBuilder(data.play, { name: "tiktok.mp4" });
+            
+            // Fetch video buffer
+            const videoRes = await fetch(data.play);
+            const buffer = Buffer.from(await videoRes.arrayBuffer());
+            const videoAttachment = new AttachmentBuilder(buffer, { name: "tiktok.mp4" });
 
-            await interaction.editReply({
-                embeds: [embed],
-                files: [videoAttachment]
-            });
+            try {
+                // Try to upload
+                await interaction.editReply({
+                    embeds: [embed],
+                    files: [videoAttachment]
+                });
+            } catch (err) {
+                // If it fails with "Request entity too large" (code 40005) or similar, fallback
+                if (err.code === 40005 || err.status === 413) {
+                    const vxUrl = url.replace("tiktok.com", "vxtiktok.com");
+                    await interaction.editReply({ 
+                        content: vxUrl,
+                        embeds: [embed],
+                        files: [] 
+                    });
+                } else {
+                    throw err; 
+                }
+            }
         } catch (err) {
             console.error(err);
             await interaction.editReply({ content: `Failed to repost TikTok: ${err.message || "Unknown error"}` });
@@ -51,13 +69,30 @@ module.exports = {
             if (!data) throw new Error("Could not fetch TikTok data.");
 
             const embed = this.buildEmbed(data);
-            const videoAttachment = new AttachmentBuilder(data.play, { name: "tiktok.mp4" });
 
-            await sent.edit({
-                content: "",
-                embeds: [embed],
-                files: [videoAttachment]
-            });
+            // Fetch video buffer
+            const videoRes = await fetch(data.play);
+            const buffer = Buffer.from(await videoRes.arrayBuffer());
+            const videoAttachment = new AttachmentBuilder(buffer, { name: "tiktok.mp4" });
+
+            try {
+                await sent.edit({
+                    content: "",
+                    embeds: [embed],
+                    files: [videoAttachment]
+                });
+            } catch (err) {
+                if (err.code === 40005 || err.status === 413) {
+                    const vxUrl = url.replace("tiktok.com", "vxtiktok.com");
+                    await sent.edit({
+                        content: vxUrl,
+                        embeds: [embed],
+                        files: []
+                    });
+                } else {
+                    throw err;
+                }
+            }
         } catch (err) {
             console.error(err);
             await sent.edit({ content: `Failed to repost TikTok: ${err.message || "Unknown error"}` });
