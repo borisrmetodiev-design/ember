@@ -10,7 +10,7 @@ const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
-const MUSIC_EMOJI = process.env.emberMUSIC;
+const MUSIC_EMOJI = () => process.env.emberMUSIC || "🎵"; // Function to always get current value
 
 function loadDB() {
     if (!fs.existsSync(dataPath)) return { users: {} };
@@ -69,7 +69,7 @@ const nowplayingLogic = {
                 name: `${targetUser.username}`,
                 iconURL: targetUser.displayAvatarURL({ dynamic: true })
             })
-            .setTitle(`${MUSIC_EMOJI} No Last.fm Account Linked`)
+            .setTitle(`${MUSIC_EMOJI()} No Last.fm Account Linked`)
             .setDescription(
                 `There's no LastFM account associated with ${targetUser}.\n` +
                 `Please run the \`lastfmsetup\` command to connect accounts.`
@@ -90,10 +90,10 @@ const nowplayingLogic = {
 
         let headerText;
         if (isNowPlaying) {
-            headerText = `${MUSIC_EMOJI} Now Playing`;
+            headerText = `${MUSIC_EMOJI()} Now Playing`;
         } else {
             const playedAgo = playedAt ? `<t:${Math.floor(playedAt.getTime() / 1000)}:R>` : "Unknown time";
-            headerText = `${MUSIC_EMOJI} Last Played • ${playedAgo}`;
+            headerText = `${MUSIC_EMOJI()} Last Played • ${playedAgo}`;
         }
 
         const embed = new EmbedBuilder()
@@ -115,14 +115,14 @@ const nowplayingLogic = {
     },
 
     async execute(interactionOrMessage, isSlash, targetUser) {
-        const loadingEmoji = process.env.emberLOAD;
+        const loadingEmoji = process.env.emberLOAD || "🔄";
         const user = targetUser || (isSlash ? interactionOrMessage.user : interactionOrMessage.author);
         
         let response;
         if (isSlash) {
-            response = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching Last.fm data...`, fetchReply: true });
+            await interactionOrMessage.deferReply();
         } else {
-            response = await interactionOrMessage.reply(`${loadingEmoji} Fetching Last.fm data...`);
+            response = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching Last.fm data...` });
         }
 
         const username = await this.getLastFMUsername(user.id);

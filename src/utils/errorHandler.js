@@ -2,7 +2,7 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags
 const path = require("path");
 const fs = require("fs");
 
-const ERROR_EMOJI = process.env.emberERROR;
+const ERROR_EMOJI = () => process.env.emberERROR || "❌";
 const BORIS_ID_1 = process.env.BORIS_ID_1;
 const BORIS_ID_2 = process.env.BORIS_ID_2;
 
@@ -19,7 +19,7 @@ try {
 function buildErrorEmbed(code, err) {
     const embed = new EmbedBuilder()
         .setColor("#ff0000")
-        .setTitle(`${ERROR_EMOJI} Error ${code}`)
+        .setTitle(`${ERROR_EMOJI()} Error ${code}`)
         .setDescription(ERROR_MAP[code] || "Unknown error.")
         .setTimestamp();
 

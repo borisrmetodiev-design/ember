@@ -41,7 +41,7 @@ module.exports = {
     // Slash command
     async executeSlash(interaction) {
         try {
-            const loadingEmoji = process.env.emberLOAD;
+            const loadingEmoji = process.env.emberLOAD || "⏳";
 
             let sent;
             try {

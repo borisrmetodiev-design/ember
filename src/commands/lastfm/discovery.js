@@ -7,7 +7,7 @@ const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
-const MUSIC_EMOJI = process.env.emberMUSIC;
+const MUSIC_EMOJI = () => process.env.emberMUSIC || "🎵";
 
 function loadDB() {
     if (!fs.existsSync(dataPath)) return { users: {} };
@@ -155,7 +155,7 @@ const discoveryLogic = {
                 name: `${targetUser.username}`,
                 iconURL: targetUser.displayAvatarURL({ dynamic: true })
             })
-            .setTitle(`${MUSIC_EMOJI} No Last.fm Account Linked`)
+            .setTitle(`${MUSIC_EMOJI()} No Last.fm Account Linked`)
             .setDescription(`There's no LastFM account associated with ${targetUser}.\nUse \`lastfmsetup\` to connect accounts.`)
             .setTimestamp();
     }
@@ -231,7 +231,7 @@ module.exports = {
         let query = interaction.options.getString("query");
         const targetUser = interaction.options.getUser("user") || interaction.user;
 
-        await interaction.reply(`${loadingEmoji} Fetching library data...`);
+        await interaction.deferReply();
 
         const username = await discoveryLogic.getLastFMUsername(targetUser.id);
         if (!username) {
@@ -260,7 +260,7 @@ module.exports = {
                 name: `${targetUser.username}'s First Discovery`,
                 iconURL: targetUser.displayAvatarURL({ dynamic: true })
             })
-            .setTitle(`${MUSIC_EMOJI} ${result.name}`)
+            .setTitle(`${MUSIC_EMOJI()} ${result.name}`)
             .setURL(result.url)
             .addFields(
                 { name: "First Listened", value: result.firstScrobbleDate ? `<t:${result.firstScrobbleDate}:F> (<t:${result.firstScrobbleDate}:R>)` : "Unknown", inline: false }
