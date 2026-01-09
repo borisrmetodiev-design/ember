@@ -33,9 +33,12 @@ module.exports = {
         const reactionsnipes = client.reactionsnipes.get(channelId);
 
         if (!reactionsnipes || reactionsnipes.length === 0) {
-            const content = "There are no recently changed reactions in this channel.";
-            if (context.isChatInputCommand?.()) return context.reply({ content, ephemeral: true });
-            return context.reply({ content });
+            const embed = new EmbedBuilder()
+                .setColor("#000000")
+                .setTitle(`${process.env.emberERROR} No Reactions Found`)
+                .setDescription("There are no recently changed reactions in this channel.");
+            if (context.isChatInputCommand?.()) return context.reply({ embeds: [embed], ephemeral: true });
+            return context.reply({ embeds: [embed] });
         }
 
         const snipedReactions = reactionsnipes.slice(0, count);

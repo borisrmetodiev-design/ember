@@ -33,9 +33,12 @@ module.exports = {
         const editsnipes = client.editsnipes.get(channelId);
 
         if (!editsnipes || editsnipes.length === 0) {
-            const content = "There are no recently edited messages in this channel.";
-            if (context.isChatInputCommand?.()) return context.reply({ content, ephemeral: true });
-            return context.reply({ content });
+            const embed = new EmbedBuilder()
+                .setColor("#000000")
+                .setTitle(`${process.env.emberERROR} No Edits Found`)
+                .setDescription("There are no recently edited messages in this channel.");
+            if (context.isChatInputCommand?.()) return context.reply({ embeds: [embed], ephemeral: true });
+            return context.reply({ embeds: [embed] });
         }
 
         const snipedEdits = editsnipes.slice(0, count);

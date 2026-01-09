@@ -7,7 +7,7 @@ const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
-const MUSIC_EMOJI = "<a:emberMUSIC:1452939837203152896>";
+const MUSIC_EMOJI = process.env.emberMUSIC;
 
 function loadDB() {
     if (!fs.existsSync(dataPath)) return { users: {} };
