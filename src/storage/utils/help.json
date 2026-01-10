@@ -183,6 +183,13 @@
           "aliases": ["speechtotext"],
           "usage": "\\spt [attachment/reply]",
           "slashUsage": "/spt [file]"
+        },
+        {
+          "name": "lyrics",
+          "description": "Get lyrics for a song from Genius",
+          "aliases": ["ly"],
+          "usage": "\\lyrics [song]",
+          "slashUsage": "/lyrics [song]"
         }
       ]
     },
