@@ -10,7 +10,7 @@ const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
-const MUSIC_EMOJI = () => process.env.emberMUSIC;
+const MUSIC_EMOJI = () => process.env.lumenMUSIC;
 
 function loadDB() {
     if (!fs.existsSync(dataPath)) return { users: {} };
@@ -115,7 +115,7 @@ const nowplayingLogic = {
     },
 
     async execute(interactionOrMessage, isSlash, targetUser) {
-        const loadingEmoji = process.env.emberLOAD;
+        const loadingEmoji = process.env.lumenLOAD;
         const user = targetUser || (isSlash ? interactionOrMessage.user : interactionOrMessage.author);
         
         let response;

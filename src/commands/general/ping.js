@@ -41,7 +41,7 @@ module.exports = {
     // Slash command
     async executeSlash(interaction) {
         try {
-            const loadingEmoji = process.env.emberLOAD;
+            const loadingEmoji = process.env.lumenLOAD;
 
             let sent;
             try {
@@ -83,7 +83,7 @@ module.exports = {
     // Prefix command
     async executePrefix(message) {
         try {
-            const loadingEmoji = process.env.emberLOAD;
+            const loadingEmoji = process.env.lumenLOAD;
 
             let sent;
             try {

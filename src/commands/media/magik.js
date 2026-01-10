@@ -80,7 +80,7 @@ module.exports = {
         const gif = interaction.options.getBoolean("gif") ?? false;
         const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
         const intensity = interaction.options.getInteger("intensity") ?? 2;
-        const loadingEmoji = process.env.emberLOAD;
+        const loadingEmoji = process.env.lumenLOAD;
 
         await interaction.reply({ content: `${loadingEmoji} Processing magik...`, ephemeral });
 
@@ -107,7 +107,7 @@ module.exports = {
 
     async executePrefix(message, args) {
         const image = message.attachments.first() || (message.reference ? (await message.fetchReference()).attachments.first() : null);
-        const loadingEmoji = process.env.emberLOAD || "⌛";
+        const loadingEmoji = process.env.lumenLOAD || "⌛";
 
         if (!image) {
             return message.reply("Please attach an image or reply to one!");

@@ -61,7 +61,7 @@ module.exports = {
         const url = args[0];
         if (!url) return message.reply("Please provide a TikTok URL!");
 
-        const loadingEmoji = process.env.emberLOAD;
+        const loadingEmoji = process.env.lumenLOAD;
         const sent = await message.reply(`${loadingEmoji} Fetching TikTok...`);
 
         try {

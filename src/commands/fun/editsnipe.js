@@ -35,7 +35,7 @@ module.exports = {
         if (!editsnipes || editsnipes.length === 0) {
             const embed = new EmbedBuilder()
                 .setColor("#000000")
-                .setTitle(`${process.env.emberERROR} No Edits Found`)
+                .setTitle(`${process.env.lumenERROR} No Edits Found`)
                 .setDescription("There are no recently edited messages in this channel.");
             if (context.isChatInputCommand?.()) return context.reply({ embeds: [embed], ephemeral: true });
             return context.reply({ embeds: [embed] });

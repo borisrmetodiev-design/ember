@@ -1,5 +1,5 @@
 {
-  "name": "ember",
+  "name": "lumen",
   "version": "1.0.0",
   "description": "��#\u0000 \u0000e\u0000m\u0000b\u0000e\u0000r\u0000\r\u0000 \u0000",
   "main": "index.js",
@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borisrmetodiev-design/ember.git"
+    "url": "git+https://github.com/borisrmetodiev-design/lumen.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/borisrmetodiev-design/ember/issues"
+    "url": "https://github.com/borisrmetodiev-design/lumen/issues"
   },
-  "homepage": "https://github.com/borisrmetodiev-design/ember#readme",
+  "homepage": "https://github.com/borisrmetodiev-design/lumen#readme",
   "dependencies": {
     "discord.js": "^14.25.1",
     "dotenv": "^17.2.3",

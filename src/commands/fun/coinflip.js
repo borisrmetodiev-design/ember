@@ -25,7 +25,7 @@ module.exports = [
 
         async handleFlip(context, choice, ephemeral) {
             const isSlash = context.isChatInputCommand?.();
-            const loadingEmoji = process.env.emberLOAD;
+            const loadingEmoji = process.env.lumenLOAD;
             
             const initialEmbed = new EmbedBuilder()
                 .setColor("#000000")
@@ -44,8 +44,8 @@ module.exports = [
             const result = Math.random() < 0.5 ? "Heads" : "Tails";
 
             const thumbnails = {
-                "Heads": process.env.emberHEADS,
-                "Tails": process.env.emberTAILS
+                "Heads": process.env.lumenHEADS,
+                "Tails": process.env.lumenTAILS
             };
 
             const resultEmbed = new EmbedBuilder()
@@ -106,7 +106,7 @@ module.exports = [
             if (!choice || !["heads", "tails"].includes(choice.toLowerCase())) {
                 const embed = new EmbedBuilder()
                     .setColor("#FF0000")
-                    .setTitle(`${process.env.emberERROR} Invalid Choice`)
+                    .setTitle(`${process.env.lumenERROR} Invalid Choice`)
                     .setDescription("Please specify either `heads` or `tails`.\nExample: `\\coinflipchoose heads`.");
                 return message.reply({ embeds: [embed] });
             }

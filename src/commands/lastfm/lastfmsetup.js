@@ -3,8 +3,8 @@ const fs = require("fs");
 const path = require("path");
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
-const MUSIC_EMOJI = () => process.env.emberMUSIC;
-const LOAD_EMOJI = () => process.env.emberLOAD;
+const MUSIC_EMOJI = () => process.env.lumenMUSIC;
+const LOAD_EMOJI = () => process.env.lumenLOAD;
 
 function loadDB() {
     try {

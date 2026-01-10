@@ -43,7 +43,7 @@ module.exports = {
     // Slash command
     async executeSlash(interaction) {
         try {
-            const loadingEmoji = process.env.emberLOAD;
+            const loadingEmoji = process.env.lumenLOAD;
 
             const image = interaction.options.getAttachment("image");
             const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
@@ -88,7 +88,7 @@ module.exports = {
     // Prefix command
     async executePrefix(message) {
         try {
-            const loadingEmoji = process.env.emberLOAD;
+            const loadingEmoji = process.env.lumenLOAD;
 
             const image = message.attachments.first();
             if (!image) throw { code: "003" }; // No asset set

@@ -7,7 +7,7 @@ const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
-const MUSIC_EMOJI = () => process.env.emberMUSIC;
+const MUSIC_EMOJI = () => process.env.lumenMUSIC;
 
 function loadDB() {
     if (!fs.existsSync(dataPath)) return { users: {} };
@@ -226,7 +226,7 @@ module.exports = {
     },
 
     async executeSlash(interaction) {
-        const loadingEmoji = process.env.emberLOAD;
+        const loadingEmoji = process.env.lumenLOAD;
         const mode = interaction.options.getString("mode");
         let query = interaction.options.getString("query");
         const targetUser = interaction.options.getUser("user") || interaction.user;
@@ -285,7 +285,7 @@ module.exports = {
     },
 
     async executePrefix(message, args) {
-        const loadingEmoji = process.env.emberLOAD;
+        const loadingEmoji = process.env.lumenLOAD;
         const targetUser = message.mentions.users.first() || message.author;
         
         if (!args[0]) {
