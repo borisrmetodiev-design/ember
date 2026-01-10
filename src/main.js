@@ -320,4 +320,4 @@ client.on("messageReactionAdd", async (reaction, user) => {
 // Login
 startKeepAliveServer();
 client.login(process.env.TOKEN);
-console.log("Logged in as " + client.user.tag);
+console.log("Logged in!")
