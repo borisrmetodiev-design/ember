@@ -17,29 +17,52 @@ module.exports = {
 
     async autocomplete(interaction) {
         const focusedValue = interaction.options.getFocused();
-        if (!focusedValue) return interaction.respond([]);
+        if (!focusedValue) return interaction.respond([]).catch(() => {});
 
         try {
-            const results = await GeniusService.searchSongs(focusedValue);
-            const choices = results.slice(0, 25).map(song => ({
-                name: `${song.title} - ${song.artist}`,
-                value: `${song.title} ${song.artist}`
-            }));
-            await interaction.respond(choices);
+            // Add a timeout to ensure we respond within Discord's 3-second limit
+            const results = await Promise.race([
+                GeniusService.searchSongs(focusedValue),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2500))
+            ]);
+
+            const choices = results.slice(0, 25).map(song => {
+                const name = `${song.title} - ${song.artist}`;
+                return {
+                    // Discord limit for choice name is 100 characters
+                    name: name.length > 100 ? name.substring(0, 97) + "..." : name,
+                    value: song.id.toString() // Use ID instead of query to be more precise
+                };
+            });
+
+            if (!interaction.responded) {
+                await interaction.respond(choices);
+            }
         } catch (err) {
-            await interaction.respond([]);
+            console.error(`Autocomplete error for lyrics: ${err.message}`);
+            if (!interaction.responded) {
+                await interaction.respond([]).catch(() => {});
+            }
         }
     },
 
     async executeSlash(interaction) {
-        await interaction.deferReply();
+        try {
+            await interaction.deferReply();
+        } catch (err) {
+            console.error(`Failed to defer reply for lyrics command: ${err.message}`);
+            return;
+        }
+
         const query = interaction.options.getString("song");
 
         try {
             await this.processLyrics(interaction, query, true);
         } catch (err) {
             console.error(err);
-            await interaction.editReply({ content: `Error: ${err.message || "Unknown error occurred"}` });
+            if (interaction.deferred || interaction.replied) {
+                await interaction.editReply({ content: `Error: ${err.message || "Unknown error occurred"}` }).catch(() => {});
+            }
         }
     },
 
@@ -62,7 +85,15 @@ module.exports = {
 
     async processLyrics(context, query, isSlash, user) {
         const targetUser = isSlash ? context.user : user;
-        const song = await GeniusService.searchSong(query);
+        
+        let song;
+        // If the query is just a number, it's likely an ID from autocomplete
+        if (/^\d+$/.test(query)) {
+            const results = await GeniusService.searchSongs(query);
+            song = results.find(s => s.id.toString() === query) || results[0];
+        } else {
+            song = await GeniusService.searchSong(query);
+        }
 
         if (!song) {
             const content = `No lyrics found for **${query}**.`;
