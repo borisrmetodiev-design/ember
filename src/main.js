@@ -104,7 +104,7 @@ client.on("interactionCreate", async interaction => {
             } catch (err) {
                 console.error(`Error in command ${interaction.commandName}:`, err);
                 const { embed, components } = buildErrorEmbed(err.code || "004", err.err || err);
-                
+
                 try {
                     if (interaction.replied || interaction.deferred) {
                         await interaction.editReply({ content: "", embeds: [embed], components });
@@ -214,7 +214,7 @@ client.on("messageDelete", async (message) => {
     if (!message.guild || message.author?.bot) return;
 
     const snipes = client.snipes.get(message.channel.id) || [];
-    
+
     const snipe = {
         content: message.content,
         author: message.author,
@@ -240,7 +240,7 @@ client.on("messageUpdate", async (oldMessage, newMessage) => {
     if (!oldMessage.guild || oldMessage.author?.bot || oldMessage.content === newMessage.content) return;
 
     const editsnipes = client.editsnipes.get(oldMessage.channel.id) || [];
-    
+
     const editsnipe = {
         oldContent: oldMessage.content,
         newContent: newMessage.content,
@@ -271,7 +271,7 @@ client.on("messageReactionRemove", async (reaction, user) => {
     if (user.bot || !reaction.message.guild) return;
 
     const reactionsnipes = client.reactionsnipes.get(reaction.message.channel.id) || [];
-    
+
     const reactionsnipe = {
         user: user,
         emoji: reaction.emoji,
@@ -301,7 +301,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
     if (user.bot || !reaction.message.guild) return;
 
     const reactionsnipes = client.reactionsnipes.get(reaction.message.channel.id) || [];
-    
+
     const reactionsnipe = {
         user: user,
         emoji: reaction.emoji,
@@ -320,4 +320,3 @@ client.on("messageReactionAdd", async (reaction, user) => {
 // Login
 startKeepAliveServer();
 client.login(process.env.TOKEN);
-console.log("Logged in!")
