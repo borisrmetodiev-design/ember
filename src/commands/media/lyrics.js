@@ -102,7 +102,7 @@ module.exports = {
             ] });
         }
 
-        const lyrics = await GeniusService.fetchLyrics(song.url);
+        const lyrics = await GeniusService.fetchLyrics(song.id);
         
         // Split lyrics into pages (max 2000 chars per page for better readability)
         const pages = this.splitLyrics(lyrics, 2000);
