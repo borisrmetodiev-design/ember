@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
+const MUSIC_EMOJI = () => process.env.emberMUSIC;
+const LOAD_EMOJI = () => process.env.emberLOAD;
 
 function loadDB() {
     try {
@@ -77,13 +79,13 @@ async function buildConfirmationEmbed(mode, username, oldUsername = null) {
             const userInfo = await fetchLastFMUserInfo(username);
 
             if (mode === "link") {
-                embed.setTitle("Confirm Last.fm Link")
+                embed.setTitle(`${MUSIC_EMOJI()} Confirm Last.fm Link`)
                     .setDescription(
                         `Are you sure you want to link this Last.fm account?\n\n` +
                         `**Username:** [${userInfo.username}](${userInfo.url})`
                     );
             } else {
-                embed.setTitle("Confirm Last.fm Replace")
+                embed.setTitle(`${MUSIC_EMOJI()} Confirm Last.fm Replace`)
                     .setDescription(
                         `Are you sure you want to replace your Last.fm account?\n\n` +
                         `**Old Username:** \`${oldUsername}\`\n` +
@@ -116,14 +118,14 @@ async function buildConfirmationEmbed(mode, username, oldUsername = null) {
         } catch (err) {
             // If fetching fails, show basic confirmation
             if (mode === "link") {
-                embed.setTitle("Confirm Last.fm Link")
+                embed.setTitle(`${MUSIC_EMOJI()} Confirm Last.fm Link`)
                     .setDescription(
                         `Are you sure you want to link your Last.fm account?\n\n` +
                         `**Username:** \`${username}\`\n\n` +
                         `Could not fetch profile info. Please verify the username is correct.`
                     );
             } else {
-                embed.setTitle("Confirm Last.fm Replace")
+                embed.setTitle(`${MUSIC_EMOJI()} Confirm Last.fm Replace`)
                     .setDescription(
                         `Are you sure you want to replace your Last.fm account?\n\n` +
                         `**Old Username:** \`${oldUsername}\`\n` +
@@ -133,7 +135,7 @@ async function buildConfirmationEmbed(mode, username, oldUsername = null) {
             }
         }
     } else if (mode === "unlink") {
-        embed.setTitle("Confirm Last.fm Unlink")
+        embed.setTitle(`${MUSIC_EMOJI()} Confirm Last.fm Unlink`)
             .setDescription(
                 `Are you sure you want to unlink your Last.fm account?\n\n` +
                 `**Username:** \`${username}\``
@@ -149,21 +151,21 @@ function buildSuccessEmbed(mode, username) {
         .setTimestamp();
 
     if (mode === "link") {
-        embed.setTitle("Last.fm Account Linked")
+        embed.setTitle(`${MUSIC_EMOJI()} Last.fm Account Linked`)
             .setDescription(
                 `Your Last.fm account has been linked successfully!\n\n` +
                 `**Username:** \`${username}\`\n` +
                 `You can now use \`/np\`, \`/fm\`, or \`/nowplaying\`.`
             );
     } else if (mode === "replace") {
-        embed.setTitle("Last.fm Account Replaced")
+        embed.setTitle(`${MUSIC_EMOJI()} Last.fm Account Replaced`)
             .setDescription(
                 `Your Last.fm account has been replaced successfully!\n\n` +
                 `**New Username:** \`${username}\`\n` +
                 `You can now use \`/np\`, \`/fm\`, or \`/nowplaying\`.`
             );
     } else if (mode === "unlink") {
-        embed.setTitle("Last.fm Account Unlinked")
+        embed.setTitle(`${MUSIC_EMOJI()} Last.fm Account Unlinked`)
             .setDescription(
                 `Your Last.fm account has been unlinked successfully.\n\n` +
                 `Use \`/lastfmsetup\` to link a new account.`
@@ -231,7 +233,7 @@ module.exports = {
                 if (currentUsername) {
                     const embed = new EmbedBuilder()
                         .setColor("#ff3300")
-                        .setTitle("Account Already Linked")
+                        .setTitle(`${MUSIC_EMOJI()} Account Already Linked`)
                         .setDescription(
                             `You already have a Last.fm account linked: \`${currentUsername}\`\n\n` +
                             `Use \`/lastfmsetup mode:replace\` to change it.`
@@ -245,7 +247,7 @@ module.exports = {
                 if (!currentUsername) {
                     const embed = new EmbedBuilder()
                         .setColor("#ff3300")
-                        .setTitle("No Account Linked")
+                        .setTitle(`${MUSIC_EMOJI()} No Account Linked`)
                         .setDescription(
                             `You don't have a Last.fm account linked yet.\n\n` +
                             `Use \`/lastfmsetup mode:link\` to link one.`
@@ -257,7 +259,7 @@ module.exports = {
                 if (!currentUsername) {
                     const embed = new EmbedBuilder()
                         .setColor("#ff3300")
-                        .setTitle("No Account Linked")
+                        .setTitle(`${MUSIC_EMOJI()} No Account Linked`)
                         .setDescription(
                             `You don't have a Last.fm account linked.\n\n` +
                             `Use \`/lastfmsetup mode:link\` to link one.`
@@ -317,7 +319,7 @@ module.exports = {
                 if (currentUsername) {
                     const embed = new EmbedBuilder()
                         .setColor("#ff3300")
-                        .setTitle("Account Already Linked")
+                        .setTitle(`${MUSIC_EMOJI()} Account Already Linked`)
                         .setDescription(
                             `You already have a Last.fm account linked: \`${currentUsername}\`\n\n` +
                             `Use \`\\\\lastfmsetup replace <username>\` to change it.`
@@ -330,7 +332,7 @@ module.exports = {
                 if (!currentUsername) {
                     const embed = new EmbedBuilder()
                         .setColor("#ff3300")
-                        .setTitle("No Account Linked")
+                        .setTitle(`${MUSIC_EMOJI()} No Account Linked`)
                         .setDescription(
                             `You don't have a Last.fm account linked yet.\n\n` +
                             `Use \`\\\\lastfmsetup link <username>\` to link one.`
@@ -342,7 +344,7 @@ module.exports = {
                 if (!currentUsername) {
                     const embed = new EmbedBuilder()
                         .setColor("#ff3300")
-                        .setTitle("No Account Linked")
+                        .setTitle(`${MUSIC_EMOJI()} No Account Linked`)
                         .setDescription(
                             `You don't have a Last.fm account linked.\n\n` +
                             `Use \`\\\\lastfmsetup link <username>\` to link one.`

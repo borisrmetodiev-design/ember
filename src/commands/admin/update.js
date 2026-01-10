@@ -93,7 +93,10 @@ module.exports = {
                 .setTimestamp();
 
             try {
-                return message.reply({ embeds: [embed] });
+                await message.reply({ embeds: [embed] });
+                const logs = require("./logs");
+                await logs.sendUpdateLog(client);
+                return;
             } catch (err) {
                 throw { code: "014", err }; // Discord API request failed
             }

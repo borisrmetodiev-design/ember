@@ -2,7 +2,7 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags
 const path = require("path");
 const fs = require("fs");
 
-const ERROR_EMOJI = () => process.env.emberERROR || "❌";
+const ERROR_EMOJI = () => process.env.emberERROR;
 const BORIS_ID_1 = process.env.BORIS_ID_1;
 const BORIS_ID_2 = process.env.BORIS_ID_2;
 

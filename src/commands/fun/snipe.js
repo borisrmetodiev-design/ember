@@ -35,7 +35,7 @@ module.exports = {
         if (!snipes || snipes.length === 0) {
             const embed = new EmbedBuilder()
                 .setColor("#000000")
-                .setTitle(`${process.env.emberERROR || "❌"} No Snipes Found`)
+                .setTitle(`${process.env.emberERROR} No Snipes Found`)
                 .setDescription("There are no recently deleted messages in this channel.");
             if (context.isChatInputCommand?.()) return context.reply({ embeds: [embed], ephemeral: true });
             return context.reply({ embeds: [embed] });

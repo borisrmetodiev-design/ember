@@ -7,7 +7,7 @@ const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
-const MUSIC_EMOJI = () => process.env.emberMUSIC || "🎵";
+const MUSIC_EMOJI = () => process.env.emberMUSIC;
 
 function loadDB() {
     if (!fs.existsSync(dataPath)) return { users: {} };
@@ -226,7 +226,7 @@ module.exports = {
     },
 
     async executeSlash(interaction) {
-        const loadingEmoji = process.env.emberLOAD || "⏳";
+        const loadingEmoji = process.env.emberLOAD;
         const mode = interaction.options.getString("mode");
         let query = interaction.options.getString("query");
         const targetUser = interaction.options.getUser("user") || interaction.user;
@@ -251,7 +251,7 @@ module.exports = {
         const result = await discoveryLogic.binarySearchDiscovery(username, mode, mainQuery, { artist: artistHint });
 
         if (!result || result.error) {
-            return interaction.editReply({ content: result?.error || `Could not find any library data for **${query}**.` });
+            return interaction.editReply({ content: result?.error || `${MUSIC_EMOJI()} Could not find any library data for **${query}**.` });
         }
 
         const embed = new EmbedBuilder()
@@ -285,7 +285,7 @@ module.exports = {
     },
 
     async executePrefix(message, args) {
-        const loadingEmoji = process.env.emberLOAD || "⏳";
+        const loadingEmoji = process.env.emberLOAD;
         const targetUser = message.mentions.users.first() || message.author;
         
         if (!args[0]) {
@@ -313,7 +313,7 @@ module.exports = {
         const result = await discoveryLogic.binarySearchDiscovery(username, mode, query);
 
         if (!result || result.error) {
-            return sent.edit({ content: result?.error || `Could not find any library data for **${query}**.` });
+            return sent.edit({ content: result?.error || `${MUSIC_EMOJI()} Could not find any library data for **${query}**.` });
         }
 
         const embed = new EmbedBuilder()
@@ -322,7 +322,7 @@ module.exports = {
                 name: `${targetUser.username}'s First Discovery`,
                 iconURL: targetUser.displayAvatarURL({ dynamic: true })
             })
-            .setTitle(`${MUSIC_EMOJI} ${result.name}`)
+            .setTitle(`${MUSIC_EMOJI()} ${result.name}`)
             .setURL(result.url)
             .addFields(
                 { name: "First Listened", value: result.firstScrobbleDate ? `<t:${result.firstScrobbleDate}:F> (<t:${result.firstScrobbleDate}:R>)` : "Unknown", inline: false }

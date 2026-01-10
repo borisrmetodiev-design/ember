@@ -80,7 +80,7 @@ module.exports = {
         const gif = interaction.options.getBoolean("gif") ?? false;
         const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
         const intensity = interaction.options.getInteger("intensity") ?? 2;
-        const loadingEmoji = process.env.emberLOAD || "⌛";
+        const loadingEmoji = process.env.emberLOAD;
 
         await interaction.reply({ content: `${loadingEmoji} Processing magik...`, ephemeral });
 

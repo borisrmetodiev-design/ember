@@ -25,7 +25,7 @@ module.exports = [
 
         async handleFlip(context, choice, ephemeral) {
             const isSlash = context.isChatInputCommand?.();
-            const loadingEmoji = process.env.emberLOAD || "🔄";
+            const loadingEmoji = process.env.emberLOAD;
             
             const initialEmbed = new EmbedBuilder()
                 .setColor("#000000")
