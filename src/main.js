@@ -323,8 +323,15 @@ client.on("messageReactionAdd", async (reaction, user) => {
 });
 
 // Login
+console.log("[DEBUG] Starting KeepAlive Server...");
 startKeepAliveServer();
-client.login(process.env.TOKEN).catch(err => {
-    console.error("FATAL: Failed to login to Discord:", err);
-    process.exit(1); 
-});
+
+console.log("[DEBUG] Logging into Discord...");
+client.on("debug", (info) => console.log(`[DISCORD DEBUG] ${info}`));
+
+client.login(process.env.TOKEN)
+    .then(() => console.log("[DEBUG] Login promise resolved."))
+    .catch(err => {
+        console.error("FATAL: Failed to login to Discord:", err);
+        process.exit(1); 
+    });
