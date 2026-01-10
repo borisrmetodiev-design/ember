@@ -31,7 +31,8 @@ for (const category of categories) {
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
-(async () => {
+// Export the deployment logic
+module.exports = async () => {
     try {
         console.log(`[DEBUG] Refreshing ${commands.length} global slash commands...`);
         console.log(`[DEBUG] Target Application ID: ${process.env.CLIENT_ID}`);
@@ -46,4 +47,4 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
         console.error("[ERROR] Error deploying commands:");
         console.error(err);
     }
-})();
+};

@@ -1,7 +1,6 @@
-if (process.env.AUTO_DEPLOY === "true") {
-    console.log("[DEBUG] AUTO_DEPLOY is true, loading deploy-commands.js...");
-    require("./deploy-commands.js");
-}
+// We will wrap startup in an async function at the bottom, so remove this immediate check.
+// if (process.env.AUTO_DEPLOY === "true") { ... }
+// Removing lines 1-4 to replace with structured startup later.
 
 require("dotenv").config();
 const {
@@ -322,18 +321,31 @@ client.on("messageReactionAdd", async (reaction, user) => {
     client.reactionsnipes.set(reaction.message.channel.id, reactionsnipes);
 });
 
-// Login
-console.log("[DEBUG] Starting KeepAlive Server...");
-startKeepAliveServer();
+(async () => {
+    // Auto-deploy logic
+    if (process.env.AUTO_DEPLOY === "true") {
+        console.log("[DEBUG] AUTO_DEPLOY is true, starting deployment...");
+        try {
+            const deploy = require("./deploy-commands.js");
+            await deploy();
+        } catch (err) {
+            console.error("[ERROR] Failed to deploy commands:", err);
+        }
+    }
 
-console.log("[DEBUG] Logging into Discord...");
-client.on("debug", (info) => console.log(`[DISCORD DEBUG] ${info}`));
-client.on("warn", (info) => console.log(`[DISCORD WARN] ${info}`));
-client.on("error", (error) => console.error(`[DISCORD ERROR] ${error.message}`));
+    // Login
+    console.log("[DEBUG] Starting KeepAlive Server...");
+    startKeepAliveServer();
 
-client.login(process.env.TOKEN)
-    .then(() => console.log("[DEBUG] Login promise resolved."))
-    .catch(err => {
-        console.error("FATAL: Failed to login to Discord:", err);
-        process.exit(1); 
-    });
+    console.log("[DEBUG] Logging into Discord...");
+    client.on("debug", (info) => console.log(`[DISCORD DEBUG] ${info}`));
+    client.on("warn", (info) => console.log(`[DISCORD WARN] ${info}`));
+    client.on("error", (error) => console.error(`[DISCORD ERROR] ${error.message}`));
+
+    client.login(process.env.TOKEN)
+        .then(() => console.log("[DEBUG] Login promise resolved."))
+        .catch(err => {
+            console.error("FATAL: Failed to login to Discord:", err);
+            process.exit(1); 
+        });
+})();
