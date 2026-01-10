@@ -328,6 +328,8 @@ startKeepAliveServer();
 
 console.log("[DEBUG] Logging into Discord...");
 client.on("debug", (info) => console.log(`[DISCORD DEBUG] ${info}`));
+client.on("warn", (info) => console.log(`[DISCORD WARN] ${info}`));
+client.on("error", (error) => console.error(`[DISCORD ERROR] ${error.message}`));
 
 client.login(process.env.TOKEN)
     .then(() => console.log("[DEBUG] Login promise resolved."))
