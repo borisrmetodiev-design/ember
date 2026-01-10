@@ -187,11 +187,11 @@ module.exports = {
                     chunk = chunk.substring(0, lastNewline);
                 }
             }
-
+  
             chunks.push(chunk);
             currentPos += chunk.length;
         }
 
         return chunks;
-    }
+    } 
 };

@@ -37,9 +37,9 @@ module.exports = {
                 .toBuffer();
         } catch (err) {
             throw { code: "011", err }; // Sharp API failed to load / conversion error
-        }
-    },
-
+        }  
+    },  
+ 
     // Slash command
     async executeSlash(interaction) {
         try {
