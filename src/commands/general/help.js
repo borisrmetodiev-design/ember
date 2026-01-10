@@ -80,12 +80,15 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle(`Command: ${foundCommand.name}`)
             .setColor("#5865F2")
-            .addFields(
-                { name: "Description", value: foundCommand.description || "No description provided." },
-                { name: "Usage", value: `\`${foundCommand.usage || "No usage provided."}\`` }
-            )
+            .addFields({ name: "Description", value: foundCommand.description || "No description provided." })
             .setTimestamp();
+            
+        // Prefix Usage (if available and not slash-only marker)
+        if (foundCommand.usage && foundCommand.usage !== "Slash command only") {
+            embed.addFields({ name: "Prefix Usage", value: `\`${foundCommand.usage}\`` });
+        }
 
+        // Slash Usage (if available)
         if (foundCommand.slashUsage) {
             embed.addFields({ name: "Slash Usage", value: `\`${foundCommand.slashUsage}\`` });
         }

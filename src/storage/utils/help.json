@@ -143,6 +143,13 @@
           "aliases": ["np", "fm"],
           "usage": "\\nowplaying [user (o)]",
           "slashUsage": "/nowplaying [user (o)]"
+        },
+        {
+          "name": "lastfmreactions",
+          "description": "Customize your Now Playing reactions",
+          "aliases": [],
+          "usage": null,
+          "slashUsage": "/lastfmreactions [upvote_emoji] [downvote_emoji] [scope]"
         }
       ]
     },

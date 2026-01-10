@@ -17,6 +17,28 @@ function loadDB() {
     return JSON.parse(fs.readFileSync(dataPath, "utf8"));
 }
 
+const customizationPath = path.join(__dirname, "../../storage/data/npCustomization.json");
+
+function loadCustomization(userId, guildId) {
+    try {
+        if (!fs.existsSync(customizationPath)) return { up: "👍", down: "👎" };
+        const db = JSON.parse(fs.readFileSync(customizationPath, "utf8"));
+        const userPrefs = db.users[userId];
+        if (!userPrefs) return { up: "👍", down: "👎" };
+
+        // Priority: Server-specific > Global > Default
+        if (guildId && userPrefs.guilds && userPrefs.guilds[guildId]) {
+            return userPrefs.guilds[guildId];
+        }
+        if (userPrefs.global) {
+            return userPrefs.global;
+        }
+    } catch (err) {
+        console.error("Error loading customization:", err);
+    }
+    return { up: "👍", down: "👎" };
+}
+
 const nowplayingLogic = {
     async getLastFMUsername(discordId) {
         const db = loadDB();
@@ -141,7 +163,23 @@ const nowplayingLogic = {
         const info = await this.fetchNowPlaying(username);
         const embed = await this.buildTrackEmbed(info, user, username);
         
-        return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [embed] }) : response.edit({ content: "", embeds: [embed] });
+        const finalMessage = isSlash ? await interactionOrMessage.editReply({ content: "", embeds: [embed] }) : await response.edit({ content: "", embeds: [embed] });
+
+        // Add reactions
+        try {
+            const guildId = isSlash ? interactionOrMessage.guildId : interactionOrMessage.guild?.id;
+            const { up, down } = loadCustomization(user.id, guildId);
+            
+            // Re-fetch message if it's a prefix response to ensure we have the message object
+            const msg = isSlash ? finalMessage : (finalMessage.id ? finalMessage : await interactionOrMessage.channel.messages.fetch(finalMessage.id));
+            
+            await msg.react(up).catch(() => {});
+            await msg.react(down).catch(() => {});
+        } catch (err) {
+            console.error("Failed to add reactions to nowplaying:", err);
+        }
+
+        return finalMessage;
     }
 };
 
