@@ -33,16 +33,17 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 (async () => {
     try {
-        console.log("Refreshing global slash commands...");
+        console.log(`[DEBUG] Refreshing ${commands.length} global slash commands...`);
+        console.log(`[DEBUG] Target Application ID: ${process.env.CLIENT_ID}`);
 
         await rest.put(
             Routes.applicationCommands(process.env.CLIENT_ID),
             { body: commands }
         );
 
-        console.log("Slash commands registered globally (DMs enabled).");
+        console.log("[DEBUG] Slash commands registered globally (DMs enabled).");
     } catch (err) {
-        console.error("Error deploying commands:");
+        console.error("[ERROR] Error deploying commands:");
         console.error(err);
     }
 })();

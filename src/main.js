@@ -1,4 +1,5 @@
 if (process.env.AUTO_DEPLOY === "true") {
+    console.log("[DEBUG] AUTO_DEPLOY is true, loading deploy-commands.js...");
     require("./deploy-commands.js");
 }
 
