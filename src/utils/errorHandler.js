@@ -9,7 +9,7 @@ const BORIS_ID_2 = process.env.BORIS_ID_2;
 // Dynamically load ERROR_MAP from errors.json
 let ERROR_MAP = {};
 try {
-    const errorsPath = path.join(__dirname, "errors.json");
+    const errorsPath = path.join(__dirname, "../storage/utils/errors.json");
     ERROR_MAP = JSON.parse(fs.readFileSync(errorsPath, "utf8"));
 } catch (err) {
     console.error("Failed to load errors.json:", err);

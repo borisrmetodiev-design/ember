@@ -120,7 +120,13 @@ const nowplayingLogic = {
         
         let response;
         if (isSlash) {
-            await interactionOrMessage.deferReply();
+            if (!interactionOrMessage.deferred && !interactionOrMessage.replied) {
+                try {
+                    await interactionOrMessage.deferReply();
+                } catch (err) {
+                    console.error("Failed to defer reply for nowplaying:", err.message);
+                }
+            }
         } else {
             response = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching Last.fm data...` });
         }

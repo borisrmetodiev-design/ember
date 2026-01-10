@@ -22,10 +22,7 @@ module.exports = {
      * @param {Client} client - Discord client
      */
     async sendStartupLog(client) {
-        const channelId = process.env.LOGS_CHANNEL;
-        const channel = client.channels.cache.get(channelId);
-        if (!channel) return console.error("Logs channel not found.");
-
+        const channelIds = [process.env.LOGS_CHANNEL, process.env.LOGS_CHANNEL_2].filter(Boolean);
         const commitInfo = this.getCommitInfo();
 
         const embed = new EmbedBuilder()
@@ -39,7 +36,15 @@ module.exports = {
             .addFields({ name: "Latest Commit", value: `\`${commitInfo}\`` })
             .setTimestamp();
 
-        await channel.send({ embeds: [embed] });
+        for (const channelId of channelIds) {
+            console.log(`Attempting to send startup log to channel: ${channelId}`);
+            const channel = client.channels.cache.get(channelId);
+            if (channel) {
+                await channel.send({ embeds: [embed] }).catch(err => console.error(`Failed to send startup log to ${channelId}:`, err));
+            } else {
+                console.error(`Logs channel ${channelId} not found in cache. Ensure the bot is in the server where this channel exists.`);
+            }
+        }
     },
 
     /**
@@ -47,10 +52,7 @@ module.exports = {
      * @param {Client} client - Discord client
      */
     async sendUpdateLog(client) {
-        const channelId = process.env.LOGS_CHANNEL;
-        const channel = client.channels.cache.get(channelId);
-        if (!channel) return console.error("Logs channel not found.");
-
+        const channelIds = [process.env.LOGS_CHANNEL, process.env.LOGS_CHANNEL_2].filter(Boolean);
         const commitInfo = this.getCommitInfo();
 
         const embed = new EmbedBuilder()
@@ -60,6 +62,14 @@ module.exports = {
             .addFields({ name: "Latest Commit", value: `\`${commitInfo}\`` })
             .setTimestamp();
 
-        await channel.send({ embeds: [embed] });
+        for (const channelId of channelIds) {
+            console.log(`Attempting to send update log to channel: ${channelId}`);
+            const channel = client.channels.cache.get(channelId);
+            if (channel) {
+                await channel.send({ embeds: [embed] }).catch(err => console.error(`Failed to send update log to ${channelId}:`, err));
+            } else {
+                console.error(`Logs channel ${channelId} not found in cache.`);
+            }
+        }
     }
 };

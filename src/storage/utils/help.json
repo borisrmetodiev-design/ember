@@ -1,0 +1,187 @@
+{
+  "categories": [
+    {
+      "name": "General",
+      "commands": [
+        {
+          "name": "help",
+          "description": "Shows the list of available commands or info about a specific command",
+          "aliases": ["h", "commands"],
+          "usage": "\\help [command (o)]",
+          "slashUsage": "/help [command (o)]"
+        },
+        {
+          "name": "ping",
+          "description": "Shows detailed bot latency and system info",
+          "aliases": [],
+          "usage": "\\ping",
+          "slashUsage": "/ping"
+        },
+        {
+          "name": "say",
+          "description": "Make the bot repeat your message",
+          "aliases": ["repeat", "echo"],
+          "usage": "\\say [text]",
+          "slashUsage": "/say [text]"
+        }
+      ]
+    },
+    {
+      "name": "Account-Server",
+      "commands": [
+        {
+          "name": "banner",
+          "description": "Get the banner of a user",
+          "aliases": [],
+          "usage": "\\banner [user (o)] [--server (o)]",
+          "slashUsage": "/banner [user (o)] [ephemeral (o)] [server (o)]"
+        },
+        {
+          "name": "pfp",
+          "description": "Get the profile picture of a user",
+          "aliases": ["avatar", "profilepic"],
+          "usage": "\\pfp [user (o)] [--server (o)]",
+          "slashUsage": "/pfp [user (o)] [ephemeral (o)] [server (o)]"
+        },
+        {
+          "name": "groupicon",
+          "description": "Get the icon of the current Group DM",
+          "aliases": ["groupfp"],
+          "usage": "\\groupicon",
+          "slashUsage": "/groupicon"
+        },
+        {
+          "name": "serverbanner",
+          "description": "Get the server's banner",
+          "aliases": ["guildbanner"],
+          "usage": "\\serverbanner [id (o)]",
+          "slashUsage": "/serverbanner [ephemeral (o)]"
+        },
+        {
+          "name": "serverpfp",
+          "description": "Get the server's profile picture",
+          "aliases": ["guildicon", "guildpfp", "servericon", "serveravatar", "guildavatar"],
+          "usage": "\\serverpfp [id (o)]",
+          "slashUsage": "/serverpfp [ephemeral (o)]"
+        }
+      ]
+    },
+    {
+      "name": "Fun",
+      "commands": [
+        {
+          "name": "snipe",
+          "description": "Retrieve recently deleted messages in this channel",
+          "aliases": ["s"],
+          "usage": "\\snipe [count (o)]",
+          "slashUsage": "/snipe [count (o)]"
+        },
+        {
+          "name": "editsnipe",
+          "description": "Retrieve recently edited messages in this channel",
+          "aliases": ["esnipe", "es"],
+          "usage": "\\editsnipe [count (o)]",
+          "slashUsage": "/editsnipe [count (o)]"
+        },
+        {
+          "name": "reactionsnipe",
+          "description": "Retrieve recently removed or added reactions in this channel",
+          "aliases": ["rsnipe", "rs"],
+          "usage": "\\reactionsnipe [count (o)]",
+          "slashUsage": "/reactionsnipe [count (o)]"
+        },
+        {
+          "name": "coinflip",
+          "description": "Flip a coin",
+          "aliases": ["cf"],
+          "usage": "\\coinflip",
+          "slashUsage": "/coinflip [ephemeral (o)]"
+        },
+        {
+          "name": "coinflipchoose",
+          "description": "Flip a coin and bet on an outcome",
+          "aliases": ["cfc", "choose"],
+          "usage": "\\coinflipchoose [heads/tails]",
+          "slashUsage": "/coinflipchoose [option] [ephemeral (o)]"
+        },
+        {
+          "name": "rockpaperscissors",
+          "description": "Play a game of Rock Paper Scissors",
+          "aliases": ["rps"],
+          "usage": "\\rps [bot/human] [opponent (o)]",
+          "slashUsage": "/rockpaperscissors [mode] [opponent (o)]"
+        },
+        {
+          "name": "tictactoe",
+          "description": "Play a game of Tic Tac Toe",
+          "aliases": ["ttt"],
+          "usage": "\\tictactoe [bot/human] [opponent (o)]",
+          "slashUsage": "/tictactoe [mode] [opponent (o)]"
+        }
+      ]
+    },
+    {
+      "name": "LastFM",
+      "commands": [
+        {
+          "name": "discovery",
+          "description": "View your library stats for an artist, song, or album",
+          "aliases": ["firstlisten", "found", "stats"],
+          "usage": "\\discovery [artist/song/album] [query] [user (o)]",
+          "slashUsage": "/discovery [mode] [query] [user (o)]"
+        },
+        {
+          "name": "lastfmsetup",
+          "description": "Manage your Last.fm account connection",
+          "aliases": ["lfmsetup", "lfm", "lastfm"],
+          "usage": "\\lastfmsetup [link/replace/unlink] [username (o)]",
+          "slashUsage": "/lastfmsetup [mode] [username (o)]"
+        },
+        {
+          "name": "nowplaying",
+          "description": "Shows the current or last played track from Last.fm",
+          "aliases": ["np", "fm"],
+          "usage": "\\nowplaying [user (o)]",
+          "slashUsage": "/nowplaying [user (o)]"
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "commands": [
+        {
+          "name": "imagetogif",
+          "description": "Convert an image to a GIF",
+          "aliases": [],
+          "usage": "\\imagetogif",
+          "slashUsage": "/imagetogif [image] [ephemeral (o)] [spoiler (o)]"
+        },
+        {
+          "name": "magik",
+          "description": "Apply a content-aware scale effect to an image",
+          "aliases": ["cms", "contentaware"],
+          "usage": "\\magik [intensity (o)] [gif (o)] [spoiler (o)]",
+          "slashUsage": "/magik [image] [intensity (o)] [gif (o)] [spoiler (o)] [ephemeral (o)]"
+        },
+        {
+          "name": "tiktokrepost",
+          "description": "Repost a TikTok video with metadata",
+          "aliases": ["ttrepost", "ttr"],
+          "usage": "\\tiktokrepost [url]",
+          "slashUsage": "/tiktokrepost [url]"
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "commands": [
+        {
+          "name": "update",
+          "description": "Hot-reload all command files",
+          "aliases": ["reload", "refresh"],
+          "usage": "\\update"
+        }
+      ]
+    }
+  ]
+}
