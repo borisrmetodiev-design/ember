@@ -176,6 +176,13 @@
           "aliases": ["ttrepost", "ttr"],
           "usage": "\\tiktokrepost [url]",
           "slashUsage": "/tiktokrepost [url]"
+        },
+        {
+          "name": "spt",
+          "description": "Transcribe audio or video to text",
+          "aliases": ["speechtotext"],
+          "usage": "\\spt [attachment/reply]",
+          "slashUsage": "/spt [file]"
         }
       ]
     },
