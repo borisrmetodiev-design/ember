@@ -84,7 +84,11 @@ for (const category of categories) {
     }
 }
 
-client.once("clientReady", async () => {
+if (!process.env.TOKEN) {
+    console.error("CRITICAL ERROR: TOKEN is not defined in process.env!");
+}
+
+client.once("ready", async () => {
     console.log(`Logged in as ${client.user.tag}`);
     await logs.sendStartupLog(client);
 });
