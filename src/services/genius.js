@@ -2,7 +2,13 @@ const Genius = require("genius-lyrics");
 
 class GeniusService {
     constructor() {
-        this.client = new Genius.Client(process.env.GENIUS_ACCESS_TOKEN);
+        console.log("Initializing Genius Service...");
+        try {
+            this.client = new Genius.Client(process.env.GENIUS_ACCESS_TOKEN);
+            console.log("Genius Client initialized.");
+        } catch (err) {
+            console.error("Failed to initialize Genius Client:", err);
+        }
     }
 
     async searchSongs(query) {

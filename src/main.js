@@ -324,4 +324,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
 
 // Login
 startKeepAliveServer();
-client.login(process.env.TOKEN);
+client.login(process.env.TOKEN).catch(err => {
+    console.error("FATAL: Failed to login to Discord:", err);
+    process.exit(1); 
+});
