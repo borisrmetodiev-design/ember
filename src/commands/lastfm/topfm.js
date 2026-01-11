@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
@@ -38,7 +38,7 @@ const topFMLogic = {
         "overall": "Overall"
     },
 
-    async fetchTopData(username, mode, period) {
+    async fetchTopData(username, mode, period, page = 1) {
         const apiKey = process.env.LASTFM_API_KEY;
         if (!apiKey) throw { code: "006" };
 
@@ -62,19 +62,13 @@ const topFMLogic = {
                 rootProperty = "topalbums";
                 itemProperty = "album";
                 break;
-            case "genre":
-                method = "user.gettoptags";
-                rootProperty = "toptags";
-                itemProperty = "tag";
-                break;
             default:
                 throw new Error("Invalid mode");
         }
 
-        // Genre (tags) doesn't support periods in Last.fm API
         const url = `https://ws.audioscrobbler.com/2.0/?method=${method}&user=${encodeURIComponent(
             username
-        )}&api_key=${apiKey}&format=json&limit=10${mode !== "genre" ? `&period=${period}` : ""}`;
+        )}&api_key=${apiKey}&format=json&limit=10&page=${page}&period=${period}`;
 
         const res = await fetch(url);
         const data = await res.json();
@@ -82,8 +76,12 @@ const topFMLogic = {
         if (data.error) {
             throw { code: "019", message: data.message };
         }
+        
+        const items = data[rootProperty]?.[itemProperty] || [];
+        // total pages usually in data[rootProperty]['@attr'].totalPages
+        const totalPages = data[rootProperty]?.["@attr"]?.totalPages || 1;
 
-        return data[rootProperty]?.[itemProperty] || [];
+        return { items, totalPages: parseInt(totalPages) };
     },
 
     buildNoAccountEmbed(targetUser) {
@@ -123,12 +121,14 @@ const topFMLogic = {
 
         const period = this.periodMap[periodInput] || "7day";
         const periodLabel = this.periodLabels[period];
+        let currentPage = 1;
 
-        try {
-            const items = await this.fetchTopData(username, mode, period);
+        // Fetch Function
+        const getEmbedAndButtons = async (page) => {
+             const { items, totalPages } = await this.fetchTopData(username, mode, period, page);
 
             if (!items || items.length === 0) {
-                const noDataEmbed = new EmbedBuilder()
+                 const noDataEmbed = new EmbedBuilder()
                     .setColor("#ff3300")
                     .setAuthor({
                         name: `${user.username}`,
@@ -137,10 +137,10 @@ const topFMLogic = {
                     .setTitle(`${MUSIC_EMOJI()} No Data Found`)
                     .setDescription(`No top ${mode}s found for ${username} in the ${periodLabel.toLowerCase()} period.`)
                     .setTimestamp();
-                return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [noDataEmbed] }) : response.edit({ content: "", embeds: [noDataEmbed] });
-            }
+                 return { embed: noDataEmbed, buttons: [] };
+             }
 
-            const embed = new EmbedBuilder()
+             const embed = new EmbedBuilder()
                 .setColor("#ff6600")
                 .setAuthor({
                     name: `${user.username}'s Top ${mode.charAt(0).toUpperCase() + mode.slice(1)}s`,
@@ -151,24 +151,95 @@ const topFMLogic = {
                     items.map((item, index) => {
                         let itemName = item.name;
                         let secondaryInfo = "";
+                        const globalIndex = (page - 1) * 10 + index + 1;
                         
                         if (mode === "artist") {
-                            secondaryInfo = `(${parseInt(item.playcount).toLocaleString()} scrobbles)`;
+                            secondaryInfo = `(${parseInt(item.playcount).toLocaleString()} plays)`;
                         } else if (mode === "track") {
-                            secondaryInfo = `by **${item.artist.name}** (${parseInt(item.playcount).toLocaleString()} scrobbles)`;
+                             // Assuming item.artist is object with name and url usually, but sometimes just name string in gettoptracks depending on level
+                             // API check: user.gettoptracks returns artist as object with name, mbid, url.
+                            secondaryInfo = `by [${item.artist.name}](${item.artist.url}) (${parseInt(item.playcount).toLocaleString()} plays)`;
                         } else if (mode === "album") {
-                            secondaryInfo = `by **${item.artist.name}** (${parseInt(item.playcount).toLocaleString()} scrobbles)`;
-                        } else if (mode === "genre") {
-                            secondaryInfo = `(${parseInt(item.count || item.playcount).toLocaleString()} scrobbles)`;
+                            secondaryInfo = `by [${item.artist.name}](${item.artist.url}) (${parseInt(item.playcount).toLocaleString()} plays)`;
                         }
 
-                        return `**${index + 1}.** [${itemName}](${item.url}) ${secondaryInfo}`;
+                        return `${globalIndex}. [${itemName}](${item.url}) ${secondaryInfo}`;
                     }).join("\n")
                 )
-                .setFooter({ text: `Last.fm • ${username}` })
+                .setFooter({ text: `Page ${page}/${totalPages} • Last.fm • ${username}` })
                 .setTimestamp();
 
-            return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [embed] }) : response.edit({ content: "", embeds: [embed] });
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('first')
+                        .setLabel('\u25C0\u25C0')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(page === 1),
+                    new ButtonBuilder()
+                        .setCustomId('prev')
+                        .setLabel('\u25C0')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(page === 1),
+                    new ButtonBuilder()
+                        .setCustomId('next')
+                        .setLabel('\u25B6')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(page >= totalPages),
+                     new ButtonBuilder()
+                        .setCustomId('last')
+                        .setLabel('\u25B6\u25B6')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(page >= totalPages)
+                );
+
+             return { embed, buttons: [row], totalPages };
+        };
+
+        try {
+            const { embed, buttons, totalPages } = await getEmbedAndButtons(currentPage);
+            
+            let msg;
+            if (isSlash) {
+                msg = await interactionOrMessage.editReply({ content: "", embeds: [embed], components: buttons });
+            } else {
+                msg = await response.edit({ content: "", embeds: [embed], components: buttons });
+            }
+
+            if (buttons.length === 0) return;
+
+             const collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 300000 }); // 5 minutes
+
+            collector.on('collect', async i => {
+                if (i.user.id !== user.id) {
+                    return i.reply({ content: "These buttons are not for you!", ephemeral: true });
+                }
+
+                await i.deferUpdate();
+
+                if (i.customId === 'prev') {
+                    if (currentPage > 1) currentPage--;
+                } else if (i.customId === 'next') {
+                    if (currentPage < totalPages) currentPage++;
+                } else if (i.customId === 'first') {
+                    currentPage = 1;
+                } else if (i.customId === 'last') {
+                    currentPage = totalPages;
+                }
+
+                const data = await getEmbedAndButtons(currentPage);
+                await i.editReply({ embeds: [data.embed], components: data.buttons });
+            });
+
+            collector.on('end', () => {
+                 // Remove buttons when collector times out
+                if (isSlash) {
+                    interactionOrMessage.editReply({ components: [] }).catch(() => {});
+                } else {
+                    msg.edit({ components: [] }).catch(() => {});
+                }
+            });
+
         } catch (err) {
             console.error("Error in topfm command:", err);
             const errorEmbed = new EmbedBuilder()
@@ -176,7 +247,7 @@ const topFMLogic = {
                 .setTitle(`${MUSIC_EMOJI()} Error`)
                 .setDescription("An error occurred while fetching data from Last.fm.")
                 .setTimestamp();
-            return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [errorEmbed] }) : response.edit({ content: "", embeds: [errorEmbed] });
+            return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [errorEmbed], components: [] }) : response.edit({ content: "", embeds: [errorEmbed], components: [] });
         }
     }
 };
@@ -186,7 +257,7 @@ const commandData = {
     aliases: ["tfm", "top"],
     data: new SlashCommandBuilder()
         .setName("topfm")
-        .setDescription("Shows your top artists, tracks, albums, or genres from Last.fm")
+        .setDescription("Shows your top artists, tracks, or albums from Last.fm")
         .addStringOption(option =>
             option.setName("mode")
                 .setDescription("What to show")
@@ -194,8 +265,7 @@ const commandData = {
                 .addChoices(
                     { name: "Artist", value: "artist" },
                     { name: "Track", value: "track" },
-                    { name: "Album", value: "album" },
-                    { name: "Genre", value: "genre" }
+                    { name: "Album", value: "album" }
                 )
         )
         .addStringOption(option =>
@@ -224,15 +294,19 @@ const commandData = {
 
     async executePrefix(message, args) {
         // Usage: \topfm [mode] [period] [user]
-        const possibleModes = ["artist", "track", "album", "genre"];
+        const modeMap = {
+            "artist": "artist", "artists": "artist",
+            "track": "track", "tracks": "track",
+            "album": "album", "albums": "album"
+        };
         const possiblePeriods = ["weekly", "monthly", "quarterly", "half", "yearly", "overall"];
 
-        let mode = "artist";
+        let mode = "artist"; // Default
         let period = "weekly";
         let targetUser = message.mentions.users.first() || message.author;
 
-        if (args[0] && possibleModes.includes(args[0].toLowerCase())) {
-            mode = args[0].toLowerCase();
+        if (args[0] && modeMap[args[0].toLowerCase()]) {
+            mode = modeMap[args[0].toLowerCase()];
         }
 
         if (args[1] && possiblePeriods.includes(args[1].toLowerCase())) {

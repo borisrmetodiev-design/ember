@@ -1,6 +1,4 @@
-// We will wrap startup in an async function at the bottom, so remove this immediate check.
-// if (process.env.AUTO_DEPLOY === "true") { ... }
-// Removing lines 1-4 to replace with structured startup later.
+
 
 require("dotenv").config();
 const {
