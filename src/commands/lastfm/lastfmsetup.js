@@ -190,7 +190,16 @@ async function handleConfirmation(interaction, mode, username, userId) {
     }
 
     const successEmbed = buildSuccessEmbed(mode, username);
-    await interaction.update({ embeds: [successEmbed], components: [] });
+    
+    try {
+        if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ embeds: [successEmbed], components: [] });
+        } else {
+            await interaction.update({ embeds: [successEmbed], components: [] });
+        }
+    } catch (err) {
+        console.warn("Could not handle confirmation interaction:", err);
+    }
 }
 
 module.exports = {

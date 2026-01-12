@@ -172,9 +172,11 @@ const playsFMLogic = {
 
         // Helper to get best image
         const getBestImage = (images) => {
-            if (!images || !Array.isArray(images) || images.length === 0) return "";
+            if (!images || !Array.isArray(images) || images.length === 0) return null;
             // Return the last image in the array (usually the largest/mega/extralarge)
-            return images[images.length - 1]["#text"];
+            const img = images[images.length - 1]["#text"];
+            if (!img) return null;
+            return img.replace(/\/i\/u\/[a-zA-Z0-9]+\//, "/i/u/_/"); 
         };
 
         let result = {};
@@ -203,6 +205,9 @@ const playsFMLogic = {
             };
         } else if (mode === "track") {
             const info = data.track;
+            // Try album image first, then track image
+            const images = info.album?.image || info.image;
+            
             result = {
                 name: info.name,
                 artist: info.artist?.name,
@@ -212,8 +217,49 @@ const playsFMLogic = {
                 globalPlaycount: info.playcount,
                 listeners: info.listeners,
                 album: info.album?.title || "",
-                image: getBestImage(info.album?.image) // Tracks sometimes have album images
+                image: getBestImage(images)
             };
+        }
+
+        // Helper to fetch from iTunes if Last.fm fails
+        const fetchItunesCover = async (term) => {
+            try {
+                const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=1`);
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    // resize to 600x600 or larger
+                    return data.results[0].artworkUrl100.replace("100x100", "1000x1000"); 
+                }
+            } catch (e) {
+                console.error("iTunes fetch failed:", e);
+            }
+            return null;
+        };
+
+        // Fallback to iTunes then Genius if image is missing
+        if (!result.image) {
+            let query = "";
+            if (mode === "artist") query = result.name;
+            else if (mode === "album") query = `${result.artist} ${result.name}`;
+            else if (mode === "track") query = `${result.artist} ${result.name}`;
+
+            if (query) {
+                // Try iTunes first
+                const itunesImg = await fetchItunesCover(query);
+                if (itunesImg) {
+                    result.image = itunesImg;
+                } else {
+                    // Try Genius as second fallback
+                     try {
+                        const song = await geniusService.searchSong(query);
+                        if (song && song.image) {
+                            result.image = song.image;
+                        }
+                    } catch (err) {
+                       // ignore
+                    }
+                }
+            }
         }
 
         return result;
@@ -248,19 +294,22 @@ const playsFMLogic = {
         const loadingEmoji = process.env.lumenLOAD || "⏳";
         const user = targetUser || (isSlash ? interactionOrMessage.user : interactionOrMessage.author);
         
-        if (isSlash && !interactionOrMessage.deferred && !interactionOrMessage.replied) {
-            await interactionOrMessage.deferReply();
-        } else if (!isSlash) {
-            // Prefix command might want a message?
-           // interactionOrMessage.reply({ content: `${loadingEmoji} Fetching data...` });
+        let responseMessage;
+
+        if (isSlash) {
+            if (!interactionOrMessage.deferred && !interactionOrMessage.replied) {
+                await interactionOrMessage.deferReply();
+            }
+        } else {
+            responseMessage = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching plays...` });
         }
 
         const username = await this.getLastFMUsername(user.id);
         if (!username) {
             const embed = this.buildNoAccountEmbed(user);
-            return isSlash 
-                ? interactionOrMessage.editReply({ content: "", embeds: [embed] }) 
-                : interactionOrMessage.reply({ content: "", embeds: [embed] });
+            if (isSlash) return interactionOrMessage.editReply({ content: "", embeds: [embed] });
+            if (responseMessage) return responseMessage.edit({ content: "", embeds: [embed] });
+            return interactionOrMessage.reply({ content: "", embeds: [embed] });
         }
 
         // Parsing Input
@@ -274,9 +323,10 @@ const playsFMLogic = {
                 const errEmbed = new EmbedBuilder()
                     .setColor("#ff3300")
                     .setDescription(`Could not find any recent tracks for ${username}. Please provide a query.`);
-                return isSlash 
-                    ? interactionOrMessage.editReply({ content: "", embeds: [errEmbed] })
-                    : interactionOrMessage.reply({ content: "", embeds: [errEmbed] });
+                
+                if (isSlash) return interactionOrMessage.editReply({ content: "", embeds: [errEmbed] });
+                if (responseMessage) return responseMessage.edit({ content: "", embeds: [errEmbed] });
+                return interactionOrMessage.reply({ content: "", embeds: [errEmbed] });
             }
 
             if (mode === "artist") {
@@ -286,9 +336,10 @@ const playsFMLogic = {
                      const errEmbed = new EmbedBuilder()
                         .setColor("#ff3300")
                         .setDescription(`Your current/latest track does not have album information. Please specify an album.`);
-                    return isSlash 
-                        ? interactionOrMessage.editReply({ content: "", embeds: [errEmbed] })
-                        : interactionOrMessage.reply({ content: "", embeds: [errEmbed] });
+                    
+                    if (isSlash) return interactionOrMessage.editReply({ content: "", embeds: [errEmbed] });
+                    if (responseMessage) return responseMessage.edit({ content: "", embeds: [errEmbed] });
+                    return interactionOrMessage.reply({ content: "", embeds: [errEmbed] });
                 }
                 itemName = currentTrack.album;
                 artistName = currentTrack.artist;
@@ -343,9 +394,10 @@ const playsFMLogic = {
             const errEmbed = new EmbedBuilder()
                 .setColor("#ff3300")
                 .setDescription(`Could not determine the artist for ${mode} "${itemName}". Please specify it (e.g. \`Name | Artist\`).`);
-            return isSlash 
-                ? interactionOrMessage.editReply({ content: "", embeds: [errEmbed] })
-                : interactionOrMessage.reply({ content: "", embeds: [errEmbed] });
+            
+            if (isSlash) return interactionOrMessage.editReply({ content: "", embeds: [errEmbed] });
+            if (responseMessage) return responseMessage.edit({ content: "", embeds: [errEmbed] });
+            return interactionOrMessage.reply({ content: "", embeds: [errEmbed] });
         }
 
         try {
@@ -355,55 +407,81 @@ const playsFMLogic = {
             ]);
             
             const embed = new EmbedBuilder()
-                .setColor("#ff6600")
+                .setColor("#2f3136") // Dark mode neutral or use a dominant color logic if we had it
                 .setAuthor({
                     name: `${user.username}`,
                     iconURL: user.displayAvatarURL({ dynamic: true })
                 })
+                .setFooter({ text: `Last.fm • ${mode.charAt(0).toUpperCase() + mode.slice(1)}` })
                 .setTimestamp();
-            
-            if (info.image) embed.setThumbnail(info.image);
 
-            const statsStr = `\nLast Week: ${periodStats["7day"]} plays` + 
-                             `\nLast Month: ${periodStats["1month"]} plays`;
+            // Image Handling (Buffer for instant load)
+            const files = [];
+            if (info.image) {
+                try {
+                    const imgRes = await fetch(info.image);
+                    const imgBuffer = await imgRes.arrayBuffer();
+                    const buffer = Buffer.from(imgBuffer);
+                    
+                    // Discord file limit is 25MB standard, but safer to check 8MB or even 10MB to be safe for non-boosted servers
+                    if (buffer.byteLength > 8 * 1024 * 1024) { 
+                        // Too large, fallback to URL
+                        embed.setThumbnail(info.image);
+                    } else {
+                        const fileName = "cover.png"; 
+                        files.push({ attachment: buffer, name: fileName });
+                        embed.setThumbnail(`attachment://${fileName}`);
+                    }
+                } catch (e) {
+                    console.error("Failed to buffer image:", e);
+                    // Fallback to URL if buffering fails
+                     embed.setThumbnail(info.image);
+                }
+            }
+
+            // Stats Logic
+            const userPlays = parseInt(info.playcount).toLocaleString();
+            const weekPlays = periodStats["7day"].toLocaleString();
+            const monthPlays = periodStats["1month"].toLocaleString();
+            
+            const globalListeners = parseInt(info.listeners).toLocaleString();
+            const globalPlays = parseInt(info.globalPlaycount).toLocaleString();
 
             if (mode === "artist") {
-                embed.setTitle(`${info.name}`);
+                embed.setTitle(info.name);
                 embed.setURL(info.url);
-                embed.setDescription(
-                    `You have **${parseInt(info.playcount).toLocaleString()}** plays.` +
-                    statsStr +
-                    `\n\n**Global Stats**` +
-                    `\nListeners: ${parseInt(info.listeners).toLocaleString()}` +
-                    `\nTotal Plays: ${parseInt(info.globalPlaycount).toLocaleString()}`
+                embed.addFields(
+                    { name: 'Your Plays', value: `All-time: **${userPlays}**\nLast Week: **${weekPlays}**\nLast Month: **${monthPlays}**`, inline: true },
+                    { name: 'Global Stats', value: `Listeners: **${globalListeners}**\nScrobbles: **${globalPlays}**`, inline: true }
                 );
             } else if (mode === "album") {
                 embed.setTitle(`${info.name} - ${info.artist}`);
                 embed.setURL(info.url);
-                embed.setDescription(
-                    `You have **${parseInt(info.playcount).toLocaleString()}** plays.` +
-                    statsStr +
-                    `\n\n**Global Stats**` +
-                    `\nListeners: ${parseInt(info.listeners).toLocaleString()}` +
-                    `\nTotal Plays: ${parseInt(info.globalPlaycount).toLocaleString()}`
+                embed.setDescription(null); // Clear description to be clean
+
+                embed.addFields(
+                    { name: 'Your Plays', value: `All-time: **${userPlays}**\nLast Week: **${weekPlays}**\nLast Month: **${monthPlays}**`, inline: true },
+                    { name: 'Global Stats', value: `Listeners: **${globalListeners}**\nScrobbles: **${globalPlays}**`, inline: true }
                 );
             } else if (mode === "track") {
                 embed.setTitle(`${info.name} - ${info.artist}`);
                 embed.setURL(info.url);
-                embed.setDescription(
-                    (info.album ? `**Album:** ${info.album}\n` : "") +
-                    `You have **${parseInt(info.playcount).toLocaleString()}** plays.` +
-                    statsStr +
-                    `\n\n**Global Stats**` +
-                    `\nListeners: ${parseInt(info.listeners).toLocaleString()}` +
-                    `\nTotal Plays: ${parseInt(info.globalPlaycount).toLocaleString()}`
+                embed.setDescription(info.album ? `**Album:** ${info.album}` : null);
+
+                embed.addFields(
+                    { name: 'Your Plays', value: `All-time: **${userPlays}**\nLast Week: **${weekPlays}**\nLast Month: **${monthPlays}**`, inline: true },
+                    { name: 'Global Stats', value: `Listeners: **${globalListeners}**\nScrobbles: **${globalPlays}**`, inline: true }
                 );
             }
 
             if (isSlash) {
-                await interactionOrMessage.editReply({ content: "", embeds: [embed] });
+                await interactionOrMessage.editReply({ content: "", embeds: [embed], files: files });
             } else {
-                 await interactionOrMessage.reply({ content: "", embeds: [embed] });
+                 if (responseMessage) {
+                     await responseMessage.edit({ content: "", embeds: [embed], files: files });
+                 } else {
+                     await interactionOrMessage.reply({ content: "", embeds: [embed], files: files });
+                 }
             }
 
         } catch (err) {
@@ -414,9 +492,10 @@ const playsFMLogic = {
                 .setTitle(`${MUSIC_EMOJI()} Error`)
                 .setDescription(errMsg)
                 .setTimestamp();
-            return isSlash 
-                ? interactionOrMessage.editReply({ content: "", embeds: [errorEmbed] })
-                : interactionOrMessage.reply({ content: "", embeds: [errorEmbed] });
+            
+            if (isSlash) return interactionOrMessage.editReply({ content: "", embeds: [errorEmbed] });
+            if (responseMessage) return responseMessage.edit({ content: "", embeds: [errorEmbed] });
+            return interactionOrMessage.reply({ content: "", embeds: [errorEmbed] });
         }
     }
 };
