@@ -298,7 +298,15 @@ const playsFMLogic = {
 
         if (isSlash) {
             if (!interactionOrMessage.deferred && !interactionOrMessage.replied) {
-                await interactionOrMessage.deferReply();
+                try {
+                    await interactionOrMessage.deferReply();
+                } catch (err) {
+                    if (err.code === 10062) {
+                        console.warn("[WARN] Interaction timed out or was unknown during deferReply in playsfm.");
+                        return;
+                    }
+                    throw err;
+                }
             }
         } else {
             responseMessage = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching plays...` });

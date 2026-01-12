@@ -114,7 +114,10 @@ client.on("interactionCreate", async interaction => {
                         await interaction.reply({ embeds: [embed], components, flags: MessageFlags.Ephemeral });
                     }
                 } catch (replyErr) {
-                    console.error("Failed to send error message:", replyErr.message);
+                    // Ignore "Unknown interaction" errors as they are expected if the interaction timed out
+                    if (replyErr.code !== 10062 && replyErr.message !== "Unknown interaction") {
+                         console.error("Failed to send error message:", replyErr.message);
+                    }
                 }
             }
         }
