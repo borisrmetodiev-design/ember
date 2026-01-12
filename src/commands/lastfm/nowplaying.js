@@ -146,7 +146,12 @@ const nowplayingLogic = {
                 try {
                     await interactionOrMessage.deferReply();
                 } catch (err) {
+                    if (err.code === 10062) {
+                         console.warn("[WARN] Interaction timed out during deferReply in nowplaying.");
+                         return;
+                    }
                     console.error("Failed to defer reply for nowplaying:", err.message);
+                    return; // Stop execution if defer failed
                 }
             }
         } else {

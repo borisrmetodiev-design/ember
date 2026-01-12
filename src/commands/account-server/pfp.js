@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require("discord.js");
 
 const pfpData = {
     name: "pfp",
@@ -32,7 +32,18 @@ const pfpData = {
                 .setTimestamp();
 
             if (isSlash) {
-                await interactionOrMessage.reply({ embeds: [embed], ephemeral });
+                try {
+                    await interactionOrMessage.reply({ 
+                        embeds: [embed], 
+                        flags: ephemeral ? MessageFlags.Ephemeral : undefined
+                    });
+                } catch (err) {
+                     if (err.code === 10062) {
+                        console.warn("[WARN] Interaction timed out during reply in pfp/avatar.");
+                        return;
+                    }
+                    throw err;
+                }
             } else {
                 await interactionOrMessage.reply({ embeds: [embed] });
             }

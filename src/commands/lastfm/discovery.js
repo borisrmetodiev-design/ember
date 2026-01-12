@@ -231,7 +231,15 @@ module.exports = {
         let query = interaction.options.getString("query");
         const targetUser = interaction.options.getUser("user") || interaction.user;
 
-        await interaction.deferReply();
+        try {
+            await interaction.deferReply();
+        } catch (err) {
+             if (err.code === 10062) {
+                console.warn("[WARN] Interaction timed out during deferReply in discovery.");
+                return;
+            }
+            throw err;
+        }
 
         const username = await discoveryLogic.getLastFMUsername(targetUser.id);
         if (!username) {

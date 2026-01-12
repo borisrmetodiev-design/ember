@@ -18,7 +18,15 @@ module.exports = {
     aliases: ["ttrepost", "ttr"],
 
     async executeSlash(interaction) {
-        await interaction.deferReply();
+        try {
+            await interaction.deferReply();
+        } catch (err) {
+             if (err.code === 10062) {
+                console.warn("[WARN] Interaction timed out during deferReply in tiktokrepost.");
+                return;
+            }
+            throw err;
+        }
         const url = interaction.options.getString("url");
 
         try {

@@ -106,7 +106,16 @@ const topFMLogic = {
         let response;
         if (isSlash) {
             if (!interactionOrMessage.deferred && !interactionOrMessage.replied) {
-                await interactionOrMessage.deferReply();
+                try {
+                    await interactionOrMessage.deferReply();
+                } catch (err) {
+                    if (err.code === 10062) {
+                         console.warn("[WARN] Interaction timed out during deferReply in topfm.");
+                         return;
+                    }
+                    console.error("Failed to defer reply for topfm:", err.message);
+                    return;
+                }
             }
         } else {
             response = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching your top ${mode}s...` });

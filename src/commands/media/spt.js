@@ -26,7 +26,15 @@ module.exports = {
     aliases: ["speechtotext"],
 
     async executeSlash(interaction) {
-        await interaction.deferReply();
+        try {
+            await interaction.deferReply();
+        } catch (err) {
+             if (err.code === 10062) {
+                console.warn("[WARN] Interaction timed out during deferReply in spt.");
+                return;
+            }
+            throw err;
+        }
         const attachment = interaction.options.getAttachment("file");
 
         try {
