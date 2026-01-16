@@ -349,4 +349,10 @@ client.on("messageReactionAdd", async (reaction, user) => {
             console.error("FATAL: Failed to login to Discord:", err);
             process.exit(1); 
         });
+
+    // DEBUG: Heartbeat logger to detect process freezing/hibernation
+    setInterval(() => {
+        const memory = process.memoryUsage().rss / 1024 / 1024;
+        console.log(`[HEARTBEAT] ${new Date().toISOString()} | Mem: ${memory.toFixed(2)}MB | Ping: ${client.ws.ping}ms`);
+    }, 60000); // Log every 1 minute
 })();
