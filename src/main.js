@@ -350,7 +350,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
             process.exit(1); 
         });
 
-    // DEBUG: Heartbeat logger to detect process freezing/hibernation
+    // DEBUG: heartbeat logger to detect process freezing/hibernation
     setInterval(() => {
         const memory = process.memoryUsage().rss / 1024 / 1024;
         console.log(`[HEARTBEAT] ${new Date().toISOString()} | Mem: ${memory.toFixed(2)}MB | Ping: ${client.ws.ping}ms`);

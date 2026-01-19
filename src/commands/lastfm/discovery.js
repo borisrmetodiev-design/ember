@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
+const { signParams } = require("../../utils/lastfmHelper");
 const SpotifyService = require("../../services/spotify");
 
 const fetch = (...args) =>
@@ -15,38 +16,109 @@ function loadDB() {
 }
 
 const discoveryLogic = {
-    async getLastFMUsername(discordId) {
+    async getLastFMCredentials(discordId) {
         const db = loadDB();
-        return db.users[discordId] || null;
+        const user = db.users[discordId];
+        if (!user) return null;
+        if (typeof user === 'string') return { username: user, sk: null };
+        return { username: user.username, sk: user.sk };
     },
 
-    async binarySearchDiscovery(username, mode, query, options = {}) {
+    async binarySearchDiscovery(creds, mode, query, options = {}) {
         const apiKey = process.env.LASTFM_API_KEY;
         if (!apiKey) throw { code: "006" };
+        
+        const { username, sk } = creds;
+
+
+
+        const getUrl = (method, extraParams = {}) => {
+            let params = {
+                method,
+                api_key: apiKey,
+                format: "json",
+                ...extraParams
+            };
+            if (sk) {
+                params.user = username;
+                params.sk = sk;
+                delete params.api_key; 
+                params = signParams(params);
+            } else {
+                 if (!params.user && !params.artist) params.user = username;
+            }
+            // build url with params
+            return `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams(params).toString()}`;
+        };
 
         try {
-            // 1. Get User Info for registration date and total playcount
-            const userUrl = `https://ws.audioscrobbler.com/2.0/?method=user.getInfo&user=${encodeURIComponent(username)}&api_key=${apiKey}&format=json`;
+            // 1. Get User Info
+            const userUrl = getUrl("user.getInfo", { user: username }); // user.getInfo uses 'user'
             const userRes = await fetch(userUrl);
             const userData = await userRes.json();
-            if (userData.error) return { error: userData.message };
+
+            if (userData.error) {
+                if (userData.error === 17) return { error: "This user's Last.fm privacy settings hide their stats." };
+                return { error: userData.message };
+            }
 
             const registeredAt = parseInt(userData.user?.registered?.unixtime);
             if (!registeredAt) return { error: "Could not determine user registration date." };
 
-            // 2. Get Entity Info for total user playcount
-            let infoUrl;
+            // 2. Get Entity Info
+            let infoParams = { username }; // Context for userplaycount
             if (mode === "artist") {
-                infoUrl = `https://ws.audioscrobbler.com/2.0/?method=artist.getInfo&username=${encodeURIComponent(username)}&artist=${encodeURIComponent(query)}&api_key=${apiKey}&format=json&autocorrect=1`;
+                infoParams.artist = query;
+                infoParams.autocorrect = 1;
             } else if (mode === "song") {
-                infoUrl = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&username=${encodeURIComponent(username)}&track=${encodeURIComponent(query)}&artist=${encodeURIComponent(options.artist || "")}&api_key=${apiKey}&format=json&autocorrect=1`;
+                infoParams.track = query;
+                infoParams.artist = options.artist || "";
+                infoParams.autocorrect = 1;
             } else if (mode === "album") {
-                infoUrl = `https://ws.audioscrobbler.com/2.0/?method=album.getInfo&username=${encodeURIComponent(username)}&album=${encodeURIComponent(query)}&artist=${encodeURIComponent(options.artist || "")}&api_key=${apiKey}&format=json&autocorrect=1`;
+                infoParams.album = query;
+                infoParams.artist = options.artist || "";
+                infoParams.autocorrect = 1;
             }
+            
+            // get info depending on mode
+            // lastfm api is weird inconsistent so adjust params carefully
+            
+            // Rewrite getUrl to be more flexible
+            const buildSignedUrl = (method, params) => {
+                 const p = { method, format: "json", ...params };
+                 if (sk) {
+                     p.sk = sk;
+                     return `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams(signParams(p)).toString()}`;
+                 } else {
+                     p.api_key = apiKey;
+                     return `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams(p).toString()}`;
+                 }
+            };
 
-            const infoRes = await fetch(infoUrl);
+            // 1. User Info Reprise
+            const userRes2 = await fetch(buildSignedUrl("user.getInfo", { user: username }));
+            const userData2 = await userRes2.json();
+             if (userData2.error) {
+                if (userData2.error === 17) return { error: "This user's Last.fm privacy settings hide their stats." };
+                return { error: userData2.message };
+            }
+            const registeredAt2 = parseInt(userData2.user?.registered?.unixtime);
+
+
+            // 2. Entity Info
+            let entityMethod = mode === "artist" ? "artist.getInfo" : (mode === "album" ? "album.getInfo" : "track.getInfo");
+            let entityParams = { username }; // Context
+            if (mode === "artist") entityParams.artist = query;
+            else if (mode === "song") { entityParams.track = query; entityParams.artist = options.artist || ""; }
+            else { entityParams.album = query; entityParams.artist = options.artist || ""; }
+            entityParams.autocorrect = 1;
+
+            const infoRes = await fetch(buildSignedUrl(entityMethod, entityParams));
             const infoData = await infoRes.json();
-            if (infoData.error) return { error: infoData.message };
+            if (infoData.error) {
+                 if (infoData.error === 17) return { error: "This user's Last.fm privacy settings hide their stats." };
+                 return { error: infoData.message };
+            }
 
             const info = infoData.artist || infoData.track || infoData.album;
             const userPlaycount = parseInt(info.userplaycount || info.stats?.userplaycount) || 0;
@@ -62,16 +134,16 @@ const discoveryLogic = {
                 };
             }
 
-            // 3. Binary Search for the 24-hour window
-            let start = registeredAt;
+            // 3. Binary Search
+            let start = registeredAt2;
             let end = Math.floor(Date.now() / 1000);
-            const method = mode === "artist" ? "user.getWeeklyArtistChart" : (mode === "album" ? "user.getWeeklyAlbumChart" : "user.getWeeklyTrackChart");
+            const chartMethod = mode === "artist" ? "user.getWeeklyArtistChart" : (mode === "album" ? "user.getWeeklyAlbumChart" : "user.getWeeklyTrackChart");
 
-            // Narrow down to ~24 hours
             while (end - start > 86400) {
                 const mid = Math.floor(start + (end - start) / 2);
-                const chartUrl = `https://ws.audioscrobbler.com/2.0/?method=${method}&user=${encodeURIComponent(username)}&from=${start}&to=${mid}&api_key=${apiKey}&format=json&limit=1000`;
-                const chartRes = await fetch(chartUrl);
+                const chartParams = { user: username, from: start, to: mid, limit: 1000 };
+                
+                const chartRes = await fetch(buildSignedUrl(chartMethod, chartParams));
                 const chartData = await chartRes.json();
 
                 const chart = chartData.weeklyartistchart?.artist || chartData.weeklyalbumchart?.album || chartData.weeklytrackchart?.track || [];
@@ -84,18 +156,22 @@ const discoveryLogic = {
                 } else {
                     start = mid;
                 }
-                // Small delay to avoid aggressive rate limiting
-                await new Promise(r => setTimeout(r, 100));
+                await new Promise(r => setTimeout(r, 100)); // Rate limit
             }
 
-            // 4. Fetch scrobbles in that window and find the exact first one
-            const finalUrl = `https://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=${encodeURIComponent(username)}&from=${start}&to=${end}&api_key=${apiKey}&format=json&limit=200`;
-            const finalRes = await fetch(finalUrl);
+            // 4. Fetch scrobbles
+            const recentParams = {
+                user: username,
+                from: start,
+                to: end,
+                limit: 200
+            };
+            const finalRes = await fetch(buildSignedUrl("user.getRecentTracks", recentParams));
             const finalData = await finalRes.json();
             const tracks = finalData.recenttracks?.track || [];
             const trackList = Array.isArray(tracks) ? tracks : [tracks];
 
-            // Filter for exact item and take the oldest (last in array usually, but let's sort to be safe)
+            // filter matches and sort by date
             const matches = trackList.filter(t => {
                 if (mode === "artist") return t.artist["#text"].toLowerCase() === info.name.toLowerCase();
                 if (mode === "song") return t.name.toLowerCase() === info.name.toLowerCase() && t.artist["#text"].toLowerCase() === info.artist.name.toLowerCase();
@@ -241,8 +317,8 @@ module.exports = {
             throw err;
         }
 
-        const username = await discoveryLogic.getLastFMUsername(targetUser.id);
-        if (!username) {
+        const creds = await discoveryLogic.getLastFMCredentials(targetUser.id);
+        if (!creds) {
             return interaction.editReply({ content: "", embeds: [discoveryLogic.buildNoAccountEmbed(targetUser)] });
         }
 
@@ -256,7 +332,7 @@ module.exports = {
             artistHint = query.substring(lastIndex + separator.length);
         }
 
-        const result = await discoveryLogic.binarySearchDiscovery(username, mode, mainQuery, { artist: artistHint });
+        const result = await discoveryLogic.binarySearchDiscovery(creds, mode, mainQuery, { artist: artistHint });
 
         if (!result || result.error) {
             return interaction.editReply({ content: result?.error || `${MUSIC_EMOJI()} Could not find any library data for **${query}**.` });
@@ -312,13 +388,13 @@ module.exports = {
 
         const sent = await message.reply(`${loadingEmoji} Fetching library data...`);
 
-        const username = await discoveryLogic.getLastFMUsername(targetUser.id);
-        if (!username) {
+        const creds = await discoveryLogic.getLastFMCredentials(targetUser.id);
+        if (!creds) {
             return sent.edit({ content: "", embeds: [discoveryLogic.buildNoAccountEmbed(targetUser)] });
         }
 
         // Prefix command doesn't have the " | " hint usually, so we just pass query
-        const result = await discoveryLogic.binarySearchDiscovery(username, mode, query);
+        const result = await discoveryLogic.binarySearchDiscovery(creds, mode, query);
 
         if (!result || result.error) {
             return sent.edit({ content: result?.error || `${MUSIC_EMOJI()} Could not find any library data for **${query}**.` });

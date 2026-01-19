@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 const SpotifyService = require("../../services/spotify");
+const { signParams } = require("../../utils/lastfmHelper");
 
 // Node-fetch v3 ESM-compatible import for CommonJS
 const fetch = (...args) =>
@@ -40,33 +41,73 @@ function loadCustomization(userId, guildId) {
 }
 
 const nowplayingLogic = {
-    async getLastFMUsername(discordId) {
+    async getLastFMCredentials(discordId) {
         const db = loadDB();
-        return db.users[discordId] || null;
+        const user = db.users[discordId];
+        if (!user) return null;
+        if (typeof user === 'string') return { username: user, sk: null };
+        return { username: user.username, sk: user.sk };
     },
 
-    async fetchNowPlaying(username) {
+    async fetchNowPlaying(creds) {
         const apiKey = process.env.LASTFM_API_KEY;
         if (!apiKey) throw { code: "006" };
 
         try {
-            const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(
-                username
-            )}&api_key=${apiKey}&format=json&limit=1`;
+            const { username, sk } = creds;
+            let params = {
+                method: "user.getrecenttracks",
+                user: username,
+                limit: 1,
+                format: "json"
+            };
+
+            if (sk) {
+                params.sk = sk;
+                params = signParams(params); 
+            } else {
+                params.api_key = apiKey;
+            }
+
+            // Construct URL from params
+            const queryString = new URLSearchParams(params).toString();
+            const url = `https://ws.audioscrobbler.com/2.0/?${queryString}`;
 
             const res = await fetch(url);
             const data = await res.json();
+
+            if (data.error) {
+                if (data.error === 17) throw { code: "022" };
+                throw { code: "005", err: data.message };
+            }
 
             if (!data.recenttracks || !data.recenttracks.track || data.recenttracks.track.length === 0) {
                 throw { code: "020" };
             }
 
             const track = data.recenttracks.track[0];
-            const infoUrl = `https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=${apiKey}&artist=${encodeURIComponent(
-                track.artist["#text"]
-            )}&track=${encodeURIComponent(track.name)}&username=${encodeURIComponent(
-                username
-            )}&format=json`;
+            // info request usually doesn't need auth unless private? 
+            // track.getinfo usually works publicly unless user specific fields needed.
+            // But if user is private, maybe track.getinfo needs auth too for userplaycount?
+            // "Use the authentication to get the user's playcount"
+            // So we should sign this too if possible.
+            
+            let infoParams = {
+                method: "track.getinfo",
+                artist: track.artist["#text"],
+                track: track.name,
+                username: username,
+                format: "json"
+            };
+             if (sk) {
+                infoParams.sk = sk;
+                infoParams = signParams(infoParams);
+            } else {
+                infoParams.api_key = apiKey;
+            }
+            
+            const infoQuery = new URLSearchParams(infoParams).toString();
+            const infoUrl = `https://ws.audioscrobbler.com/2.0/?${infoQuery}`;
 
             const infoRes = await fetch(infoUrl);
             const infoData = await infoRes.json();
@@ -158,15 +199,15 @@ const nowplayingLogic = {
             response = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching Last.fm data...` });
         }
 
-        const username = await this.getLastFMUsername(user.id);
+        const creds = await this.getLastFMCredentials(user.id);
 
-        if (!username) {
+        if (!creds) {
             const embed = this.buildNoAccountEmbed(user);
             return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [embed] }) : response.edit({ content: "", embeds: [embed] });
         }
 
-        const info = await this.fetchNowPlaying(username);
-        const embed = await this.buildTrackEmbed(info, user, username);
+        const info = await this.fetchNowPlaying(creds);
+        const embed = await this.buildTrackEmbed(info, user, creds.username);
         
         const finalMessage = isSlash ? await interactionOrMessage.editReply({ content: "", embeds: [embed] }) : await response.edit({ content: "", embeds: [embed] });
 

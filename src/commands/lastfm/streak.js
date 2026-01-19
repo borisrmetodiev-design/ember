@@ -80,13 +80,11 @@ const streakLogic = {
 
             if (trackArtist.toLowerCase() === artistName.toLowerCase()) {
                 streak++;
-                // Update start date to the current track's date (going backwards in time)
-                // If nowplaying track has no date, skip setting startDate for it (handled by next track or stays null if nowplaying is the only one)
+                // update start date if valid
                 if (track.date && track.date.uts) {
                     startDate = new Date(track.date.uts * 1000);
                 } else if (!startDate && i === tracks.length - 1) {
-                    // Fallback for startDate if only 1 track and it's now playing (no date)?
-                    // Usually we want the *start* of the streak. If single track is now playing, start date is roughly now.
+                    // fallback if single track now playing
                     startDate = new Date(); 
                 }
             } else {
@@ -95,8 +93,8 @@ const streakLogic = {
             }
         }
 
-        // If 'now playing' track (index 0) has no date, startDate might have been set by index 1, which is correct (earliest track).
-        // If streak is 1 and it's 'now playing', startDate might be null from loop if we strictly relied on track.date.
+        // handle now playing start date edge case
+
         if (streak > 0 && !startDate) {
              startDate = new Date();
         }
@@ -213,9 +211,8 @@ const commandData = {
     },
 
     async executePrefix(message, args) {
-        // \streak [artist] or \streak [user] [artist]... logic is tricky with names.
-        // Simple parsing: if first arg is user mention, use it. Rest is artist.
-        // If not user mention, all is artist.
+        // parse user and artist from args
+
         
         let targetUser = message.mentions.users.first() || message.author;
         let artistInput = args.join(" ");

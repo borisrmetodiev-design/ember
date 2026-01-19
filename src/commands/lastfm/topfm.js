@@ -6,6 +6,8 @@ const path = require("path");
 const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
+const { signParams } = require("../../utils/lastfmHelper");
+
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
 const MUSIC_EMOJI = () => process.env.lumenMUSIC || "🎵";
 
@@ -15,9 +17,12 @@ function loadDB() {
 }
 
 const topFMLogic = {
-    async getLastFMUsername(discordId) {
+    async getLastFMCredentials(discordId) {
         const db = loadDB();
-        return db.users[discordId] || null;
+        const user = db.users[discordId];
+        if (!user) return null;
+        if (typeof user === 'string') return { username: user, sk: null };
+        return { username: user.username, sk: user.sk };
     },
 
     periodMap: {
@@ -38,7 +43,7 @@ const topFMLogic = {
         "overall": "Overall"
     },
 
-    async fetchTopData(username, mode, period, page = 1) {
+    async fetchTopData(creds, mode, period, page = 1) {
         const apiKey = process.env.LASTFM_API_KEY;
         if (!apiKey) throw { code: "006" };
 
@@ -66,14 +71,31 @@ const topFMLogic = {
                 throw new Error("Invalid mode");
         }
 
-        const url = `https://ws.audioscrobbler.com/2.0/?method=${method}&user=${encodeURIComponent(
-            username
-        )}&api_key=${apiKey}&format=json&limit=10&page=${page}&period=${period}`;
+        const { username, sk } = creds;
+        let params = {
+            method: method,
+            user: username,
+            limit: 10,
+            page: page,
+            period: period,
+            format: "json"
+        };
+
+        if (sk) {
+            params.sk = sk;
+            params = signParams(params);
+        } else {
+            params.api_key = apiKey;
+        }
+
+        const queryString = new URLSearchParams(params).toString();
+        const url = `https://ws.audioscrobbler.com/2.0/?${queryString}`;
 
         const res = await fetch(url);
         const data = await res.json();
 
         if (data.error) {
+            if (data.error === 17) throw { code: "022" };
             throw { code: "019", message: data.message };
         }
         
@@ -121,12 +143,14 @@ const topFMLogic = {
             response = await interactionOrMessage.reply({ content: `${loadingEmoji} Fetching your top ${mode}s...` });
         }
 
-        const username = await this.getLastFMUsername(user.id);
+        const creds = await this.getLastFMCredentials(user.id);
 
-        if (!username) {
+        if (!creds) {
             const embed = this.buildNoAccountEmbed(user);
             return isSlash ? interactionOrMessage.editReply({ content: "", embeds: [embed] }) : response.edit({ content: "", embeds: [embed] });
         }
+        
+        const username = creds.username; // For display and no data message
 
         const period = this.periodMap[periodInput] || "7day";
         const periodLabel = this.periodLabels[period];
@@ -134,7 +158,7 @@ const topFMLogic = {
 
         // Fetch Function
         const getEmbedAndButtons = async (page) => {
-             const { items, totalPages } = await this.fetchTopData(username, mode, period, page);
+             const { items, totalPages } = await this.fetchTopData(creds, mode, period, page);
 
             if (!items || items.length === 0) {
                  const noDataEmbed = new EmbedBuilder()
@@ -165,8 +189,8 @@ const topFMLogic = {
                         if (mode === "artist") {
                             secondaryInfo = `(${parseInt(item.playcount).toLocaleString()} plays)`;
                         } else if (mode === "track") {
-                             // Assuming item.artist is object with name and url usually, but sometimes just name string in gettoptracks depending on level
-                             // API check: user.gettoptracks returns artist as object with name, mbid, url.
+                             // api usually returns artist object with name and url
+
                             secondaryInfo = `by [${item.artist.name}](${item.artist.url}) (${parseInt(item.playcount).toLocaleString()} plays)`;
                         } else if (mode === "album") {
                             secondaryInfo = `by [${item.artist.name}](${item.artist.url}) (${parseInt(item.playcount).toLocaleString()} plays)`;
@@ -358,7 +382,8 @@ const commandData = {
             args.shift();
         }
 
-        // Now check if next arg (which was args[1] originally or args[0] if shifted) is period
+        // check for period arg
+
         if (args[0] && possiblePeriods.includes(args[0].toLowerCase())) {
             period = args[0].toLowerCase();
         } 

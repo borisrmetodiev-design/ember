@@ -120,8 +120,8 @@ const playsFMLogic = {
 
                 const found = items.find(i => {
                     const iArtist = typeof i.artist === 'object' ? i.artist.name : i.artist;
-                    // For artist mode, 'i.name' is the artist name. 
-                    // For album/track, 'i.artist' is the artist and 'i.name' is the item name.
+                    // artist mode means i.name is artist otherwise i.artist is artist
+
                     
                     if (mode === "artist") {
                         return i.name.toLowerCase() === artistName.toLowerCase();
@@ -366,10 +366,8 @@ const playsFMLogic = {
             if (mode === "artist") {
                 artistName = queryInput;
             } else {
-                // For album/track, if manual input, we might need to search or assume
-                // If prefix command used "Album | Artist" syntax, we used that.
-                // Assuming queryInput is what we have.
-                // If queryInput has " | " split it.
+                // split if pipe exists
+
                 if (queryInput.includes("|")) {
                     const parts = queryInput.split("|").map(s => s.trim());
                     itemName = parts[0];
@@ -584,22 +582,17 @@ const commandData = {
         let targetUser = message.mentions.users.first() || message.author;
         
         if (!mode || !modeMap[mode]) {
-             // Default to artist if not specified? Or error?
-             // If valid mode not found, maybe whole thing is artist? 
-             // Logic: usually strict subcommand structure for cleaner code
+             // strict checking for mode
+
              return message.reply("Usage: `\\playsfm <artist|album|track> <name>`");
         }
 
         // Remove mode from args
         args.shift();
 
-        // Check for user mention at the end?
-        // simple approach: if mentions, remove them from query string
+        // check mentions
         if (message.mentions.users.size > 0) {
-            // This is tricky if mention is in middle. 
-            // Just use the first mention as targetUser and filter regex from content?
-            // Actually topfm does: targetUser = message.mentions.users.first() || message.author;
-            // and topfm handles args carefully.
+            // mentions handled by filter regex later
         }
 
         // Reconstruct query 
