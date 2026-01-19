@@ -50,34 +50,46 @@ module.exports = {
         ),
 
     async executeSlash(interaction) {
-        const up = interaction.options.getString("upvote_emoji");
-        const down = interaction.options.getString("downvote_emoji");
-        const scope = interaction.options.getString("scope");
-        const userId = interaction.user.id;
-        const guildId = interaction.guildId;
+        try {
+            await interaction.deferReply({ ephemeral: true });
 
-        const db = loadDB();
-        if (!db.users[userId]) {
-            db.users[userId] = { global: null, guilds: {} };
-        }
+            const up = interaction.options.getString("upvote_emoji");
+            const down = interaction.options.getString("downvote_emoji");
+            const scope = interaction.options.getString("scope");
+            const userId = interaction.user.id;
+            const guildId = interaction.guildId;
 
-        if (scope === "global") {
-            db.users[userId].global = { up, down };
-        } else {
-            if (!guildId) {
-                return interaction.reply({ content: "Server specific scope can only be set inside a server!", ephemeral: true });
+            const db = loadDB();
+            if (!db.users[userId]) {
+                db.users[userId] = { global: null, guilds: {} };
             }
-            db.users[userId].guilds[guildId] = { up, down };
+
+            if (scope === "global") {
+                db.users[userId].global = { up, down };
+            } else {
+                if (!guildId) {
+                    return interaction.editReply({ content: "Server specific scope can only be set inside a server!" });
+                }
+                db.users[userId].guilds[guildId] = { up, down };
+            }
+
+            saveDB(db);
+
+            const embed = new EmbedBuilder()
+                .setColor("#00ff00")
+                .setTitle("Now Playing Customization Updated")
+                .setDescription(`Your reactions have been set to ${up} and ${down} (${scope}).`)
+                .setTimestamp();
+
+            await interaction.editReply({ embeds: [embed] });
+        } catch (err) {
+            console.error("Error in lastfmreactions:", err);
+            // Try to notify user if possible
+            if (interaction.deferred || interaction.replied) {
+                await interaction.editReply({ content: "An error occurred while updating your preferences." });
+            } else {
+                await interaction.reply({ content: "An error occurred.", ephemeral: true });
+            }
         }
-
-        saveDB(db);
-
-        const embed = new EmbedBuilder()
-            .setColor("#00ff00")
-            .setTitle("Now Playing Customization Updated")
-            .setDescription(`Your reactions have been set to ${up} and ${down} (${scope}).`)
-            .setTimestamp();
-
-        await interaction.reply({ embeds: [embed], ephemeral: true });
     }
 };
