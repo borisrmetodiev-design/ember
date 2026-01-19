@@ -8,8 +8,12 @@ function startKeepAliveServer() {
     res.send('Bot is running');
   });
 
+  app.get('/health', (req, res) => {
+      res.status(200).send('OK');
+  });
+
   try {
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Web server running on port ${PORT}`);
     });
   } catch (err) {

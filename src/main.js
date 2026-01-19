@@ -50,6 +50,14 @@ client.snipes = new Map(); // Store deleted messages: channelId -> array of mess
 client.editsnipes = new Map(); // Store edited messages: channelId -> array of message objects
 client.reactionsnipes = new Map(); // Store removed reactions: channelId -> array of reaction objects
 
+// Global error handlers to prevent crash
+process.on('unhandledRejection', error => {
+    console.error('Unhandled promise rejection:', error);
+});
+process.on('uncaughtException', error => {
+    console.error('Uncaught exception:', error);
+});
+
 // Load commands
 const commandsPath = path.join(__dirname, "commands");
 const categories = fs.readdirSync(commandsPath);
@@ -59,25 +67,29 @@ for (const category of categories) {
     const files = fs.readdirSync(categoryPath).filter(f => f.endsWith(".js"));
 
     for (const file of files) {
-        const loaded = require(path.join(categoryPath, file));
-        const commands = Array.isArray(loaded) ? loaded : [loaded];
+        try {
+            const loaded = require(path.join(categoryPath, file));
+            const commands = Array.isArray(loaded) ? loaded : [loaded];
 
-        for (const command of commands) {
-            // Slash command
-            if (command.data) {
-                client.slashCommands.set(command.data.name, command);
-            }
+            for (const command of commands) {
+                // Slash command
+                if (command.data) {
+                    client.slashCommands.set(command.data.name, command);
+                }
 
-            // Prefix command
-            if (command.name) {
-                client.prefixCommands.set(command.name, command);
+                // Prefix command
+                if (command.name) {
+                    client.prefixCommands.set(command.name, command);
 
-                if (command.aliases) {
-                    for (const alias of command.aliases) {
-                        client.prefixCommands.set(alias, command);
+                    if (command.aliases) {
+                        for (const alias of command.aliases) {
+                            client.prefixCommands.set(alias, command);
+                        }
                     }
                 }
             }
+        } catch (err) {
+            console.error(`Failed to load command ${file}:`, err);
         }
     }
 }
