@@ -12,5 +12,12 @@
         "description": "Welcome {user} to {server}! You are member **#{count}**.",
         "image": "https://images2.imgbox.com/41/21/pzt4kncK_o.png",
         "color": "#00FF00"
+    },
+    "1453798781916152002": {
+        "channelId": null,
+        "title": "Welcome to {server}!",
+        "description": "Welcome {user} to {server}! You are member **#{count}**.",
+        "image": null,
+        "color": "#00FF00"
     }
 }

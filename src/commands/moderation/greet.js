@@ -46,6 +46,15 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     
     async executeSlash(interaction) {
+        // Defer reply immediately
+        try {
+            await interaction.deferReply();
+        } catch (err) {
+            // Ignore Unknown Interaction causing potential crashes (likely timeout or race condition)
+            if (err.code === 10062 || err.code === 40060) return;
+            throw err;
+        }
+
         let db = readDb();
         const guildId = interaction.guild.id;
         
@@ -82,7 +91,7 @@ module.exports = {
 
         const btnClose = new ButtonBuilder()
             .setCustomId('greet_close')
-            .setLabel('✖') // or ✖️, using simple char for compatibility
+            .setLabel('✖') 
             .setStyle(ButtonStyle.Secondary);
 
         const row1 = new ActionRowBuilder().addComponents(channelSelect);
@@ -92,11 +101,10 @@ module.exports = {
             .setTitle("Greet Setup")
             .setDescription(`Configure your welcome message.\n\n**Current Channel:** ${db[guildId].channelId ? `<#${db[guildId].channelId}>` : "Not set"}`)
             .setColor(0x0099FF);
-
-        const response = await interaction.reply({
+        
+        const response = await interaction.editReply({
             embeds: [embed],
-            components: [row1, row2],
-            ephemeral: false
+            components: [row1, row2]
         });
 
         // Collector
@@ -260,7 +268,11 @@ module.exports = {
                     )
                     .setColor(config.color || 0x00FF00);
                 
-                if (config.image) testEmbed.setImage(config.image);
+                if (config.image) {
+                    testEmbed.setImage(config.image);
+                } else {
+                    testEmbed.setThumbnail(interaction.user.displayAvatarURL({ extension: 'png' }));
+                }
                 
                 try {
                     await channel.send({ embeds: [testEmbed] });
@@ -280,7 +292,11 @@ async function showCustomizationMenu(i, config, guildId) {
         .addFields({ name: "Preview Variables", value: "{server}, {user}, {count}" })
         .setColor(0x0099FF);
         
-    if (config.image) embed.setImage(config.image);
+    if (config.image) {
+        embed.setImage(config.image);
+    } else {
+        embed.setThumbnail(i.user.displayAvatarURL({ extension: 'png' }));
+    }
 
     const btnEditMsg = new ButtonBuilder().setCustomId('greet_edit_msg').setLabel('Edit Message').setStyle(ButtonStyle.Secondary);
     const btnEditImg = new ButtonBuilder().setCustomId('greet_edit_img').setLabel('Edit Image').setStyle(ButtonStyle.Secondary);

@@ -42,6 +42,8 @@ module.exports = (client) => {
 
             if (config.image) {
                 embed.setImage(config.image);
+            } else {
+                embed.setThumbnail(member.user.displayAvatarURL({ extension: 'png' }));
             }
 
             await channel.send({ embeds: [embed] });

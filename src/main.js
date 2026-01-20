@@ -47,9 +47,9 @@ switch (process.env.HOST_ENV) {
 // Command maps
 client.slashCommands = new Collection();
 client.prefixCommands = new Collection();
-client.snipes = new Map(); // Store deleted messages: channelId -> array of message objects
-client.editsnipes = new Map(); // Store edited messages: channelId -> array of message objects
-client.reactionsnipes = new Map(); // Store removed reactions: channelId -> array of reaction objects
+client.snipes = new Map(); // store deleted messages: channelId -> array of message objects
+client.editsnipes = new Map(); // store edited messages: channelId -> array of message objects
+client.reactionsnipes = new Map(); // store removed reactions: channelId -> array of reaction objects
 
 // Load event handlers
 require("./events/guildMemberAdd")(client);
@@ -120,7 +120,9 @@ client.on("interactionCreate", async interaction => {
             try {
                 await command.executeSlash(interaction);
             } catch (err) {
-                console.error(`Error in command ${interaction.commandName}:`, err);
+                if (err.code !== 10062 && err.code !== 40060) {
+                    console.error(`Error in command ${interaction.commandName}:`, err);
+                }
                 const { embed, components } = buildErrorEmbed(err.code || "004", err.err || err);
 
                 try {
