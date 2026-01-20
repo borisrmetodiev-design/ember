@@ -43,7 +43,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("greetsetup")
         .setDescription("Setup the greeting system for this server")
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     
     async executeSlash(interaction) {
         let db = readDb();
