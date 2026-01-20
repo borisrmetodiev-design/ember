@@ -1,10 +1,10 @@
 
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const fs = require("fs");
 const path = require("path");
 
 const SpotifyService = require("../../services/spotify");
 const { signParams } = require("../../utils/lastfmHelper");
+const { readJSON } = require("../../utils/database");
 
 // Node-fetch v3 ESM-compatible import for CommonJS
 const fetch = (...args) =>
@@ -13,18 +13,17 @@ const fetch = (...args) =>
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
 const MUSIC_EMOJI = () => process.env.lumenMUSIC;
 
-function loadDB() {
-    if (!fs.existsSync(dataPath)) return { users: {} };
-    return JSON.parse(fs.readFileSync(dataPath, "utf8"));
+async function loadDB() {
+    const data = await readJSON(dataPath);
+    return data.users ? data : { users: {} };
 }
 
 const customizationPath = path.join(__dirname, "../../storage/data/npCustomization.json");
 
-function loadCustomization(userId, guildId) {
+async function loadCustomization(userId, guildId) {
     try {
-        if (!fs.existsSync(customizationPath)) return { up: "👍", down: "👎" };
-        const db = JSON.parse(fs.readFileSync(customizationPath, "utf8"));
-        const userPrefs = db.users[userId];
+        const db = await readJSON(customizationPath);
+        const userPrefs = db.users?.[userId];
         if (!userPrefs) return { up: "👍", down: "👎" };
 
         // Priority: Server-specific > Global > Default
@@ -42,7 +41,7 @@ function loadCustomization(userId, guildId) {
 
 const nowplayingLogic = {
     async getLastFMCredentials(discordId) {
-        const db = loadDB();
+        const db = await loadDB();
         const user = db.users[discordId];
         if (!user) return null;
         if (typeof user === 'string') return { username: user, sk: null };
@@ -214,7 +213,7 @@ const nowplayingLogic = {
         // Add reactions
         try {
             const guildId = isSlash ? interactionOrMessage.guildId : interactionOrMessage.guild?.id;
-            const { up, down } = loadCustomization(user.id, guildId);
+            const { up, down } = await loadCustomization(user.id, guildId);
             
             // Re-fetch message if it's a prefix response to ensure we have the message object
             const msg = isSlash ? finalMessage : (finalMessage.id ? finalMessage : await interactionOrMessage.channel.messages.fetch(finalMessage.id));

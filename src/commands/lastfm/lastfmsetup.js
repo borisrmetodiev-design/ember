@@ -1,27 +1,24 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require("discord.js");
-const fs = require("fs");
 const path = require("path");
 const { signParams, API_KEY } = require("../../utils/lastfmHelper");
+const { readJSON, writeJSON } = require("../../utils/database");
 
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
 const MUSIC_EMOJI = () => process.env.lumenMUSIC;
 const LOAD_EMOJI = () => process.env.lumenLOAD;
 
-function loadDB() {
+async function loadDB() {
     try {
-        if (!fs.existsSync(dataPath)) {
-            fs.mkdirSync(path.dirname(dataPath), { recursive: true });
-            fs.writeFileSync(dataPath, JSON.stringify({ users: {} }, null, 4));
-        }
-        return JSON.parse(fs.readFileSync(dataPath, "utf8"));
+        const data = await readJSON(dataPath);
+        return data.users ? data : { users: {} };
     } catch (err) {
         throw { code: "005", err };
     }
 }
 
-function saveDB(db) {
+async function saveDB(db) {
     try {
-        fs.writeFileSync(dataPath, JSON.stringify(db, null, 4));
+        await writeJSON(dataPath, db);
     } catch (err) {
         throw { code: "005", err };
     }
@@ -118,13 +115,13 @@ function buildSuccessEmbed(mode, username) {
 }
 
 async function handleConfirmation(interaction, mode, username, userId) {
-    const db = loadDB();
+    const db = await loadDB();
     if (mode === "link" || mode === "replace") {
         db.users[userId] = username; // Store as string (Public)
-        saveDB(db);
+        await saveDB(db);
     } else if (mode === "unlink") {
         delete db.users[userId];
-        saveDB(db);
+        await saveDB(db);
     }
     const successEmbed = buildSuccessEmbed(mode, username);
     try {
@@ -161,7 +158,7 @@ module.exports = {
             const mode = interaction.options.getString("mode");
             const username = interaction.options.getString("username");
             const userId = interaction.user.id;
-            const db = loadDB();
+            const db = await loadDB();
             let currentData = db.users[userId];
             // Normalize currentUsername if it's an object
             const currentUsername = (typeof currentData === 'object' && currentData !== null) ? currentData.username : currentData;
@@ -225,13 +222,13 @@ module.exports = {
          const username = args[1];
          const userId = message.author.id;
          
-         const db = loadDB();
+         const db = await loadDB();
          let currentData = db.users[userId];
          const currentUsername = (typeof currentData === 'object' && currentData !== null) ? currentData.username : currentData;
          
          if (!mode || !["link", "replace", "unlink"].includes(mode)) return message.reply("Invalid usage. Use `/lastfmsetup` for best experience.");
          
-         // ... (Same validation as before)
+          // ... (Same validation as before)
          if (mode === "link" && !username) return message.reply("Missing username.");
          
           const confirmEmbed = await buildConfirmationEmbed(mode, username || currentUsername, currentUsername);

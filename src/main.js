@@ -114,12 +114,36 @@ client.on("interactionCreate", async interaction => {
     try {
         // Slash commands
         if (interaction.isChatInputCommand()) {
+            const receiveTime = Date.now();
+            const interactionAge = receiveTime - interaction.createdTimestamp;
+            console.log(`[SLASH RECEIVED] /${interaction.commandName} | Interaction age: ${interactionAge}ms | Received at: ${receiveTime}`);
+
             const command = client.slashCommands.get(interaction.commandName);
             if (!command) return;
 
+            // Auto-defer if command takes too long (prevents timeout)
+            let deferred = false;
+            const deferTimeout = setTimeout(async () => {
+                try {
+                    if (!interaction.replied && !interaction.deferred) {
+                        await interaction.deferReply();
+                        deferred = true;
+                        console.log(`[SLASH DEFERRED] /${interaction.commandName} | Auto-deferred after 2.5s`);
+                    }
+                } catch (err) {
+                    console.error(`Failed to defer ${interaction.commandName}:`, err.message);
+                }
+            }, 2500); // Defer after 2.5 seconds (Discord timeout is 3s)
+
             try {
+                const execStart = Date.now();
                 await command.executeSlash(interaction);
+                clearTimeout(deferTimeout);
+                const execTime = Date.now() - execStart;
+                console.log(`[SLASH COMPLETE] /${interaction.commandName} | Execution took: ${execTime}ms | Total: ${Date.now() - receiveTime}ms | Deferred: ${deferred}`);
             } catch (err) {
+                clearTimeout(deferTimeout);
+                console.log(`[SLASH ERROR] /${interaction.commandName} | Error after: ${Date.now() - receiveTime}ms`);
                 if (err.code !== 10062 && err.code !== 40060) {
                     console.error(`Error in command ${interaction.commandName}:`, err);
                 }
@@ -211,15 +235,27 @@ client.on("messageCreate", async message => {
     if (message.author.bot) return;
     if (!message.content.startsWith(prefix)) return;
 
+    // Timing diagnostics
+    const receiveTime = Date.now();
+    const messageAge = receiveTime - message.createdTimestamp;
+    console.log(`[CMD RECEIVED] ${message.content} | Message age: ${messageAge}ms | Received at: ${receiveTime}`);
+
     const args = message.content.slice(prefix.length).trim().split(/\s+/);
     const commandName = args.shift().toLowerCase();
 
     const command = client.prefixCommands.get(commandName);
     if (!command) return;
 
+    const lookupTime = Date.now() - receiveTime;
+    console.log(`[CMD LOOKUP] ${commandName} | Lookup took: ${lookupTime}ms`);
+
     try {
+        const execStart = Date.now();
         await command.executePrefix(message, args, client);
+        const execTime = Date.now() - execStart;
+        console.log(`[CMD COMPLETE] ${commandName} | Execution took: ${execTime}ms | Total: ${Date.now() - receiveTime}ms`);
     } catch (err) {
+        console.log(`[CMD ERROR] ${commandName} | Error after: ${Date.now() - receiveTime}ms`);
         const { embed, components } = buildErrorEmbed(err.code || "004", err.err || err);
         await message.reply({ embeds: [embed], components });
     }
@@ -373,4 +409,15 @@ client.on("messageReactionAdd", async (reaction, user) => {
         const memory = process.memoryUsage().rss / 1024 / 1024;
         console.log(`[HEARTBEAT] ${new Date().toISOString()} | Mem: ${memory.toFixed(2)}MB | Ping: ${client.ws.ping}ms`);
     }, 60000); // Log every 1 minute
+
+    // Event loop lag detection
+    let lastCheck = Date.now();
+    setInterval(() => {
+        const now = Date.now();
+        const lag = now - lastCheck - 1000; // Expected to be ~1000ms
+        if (lag > 100) {
+            console.warn(`[EVENT LOOP LAG] ${lag}ms lag detected! Bot may be frozen/blocked.`);
+        }
+        lastCheck = now;
+    }, 1000); // Check every second
 })();

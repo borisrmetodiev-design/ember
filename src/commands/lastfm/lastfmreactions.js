@@ -1,25 +1,22 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const fs = require("fs");
 const path = require("path");
+const { readJSON, writeJSON } = require("../../utils/database");
 
 const dataPath = path.join(__dirname, "../../storage/data/npCustomization.json");
 
-function loadDB() {
+async function loadDB() {
     try {
-        if (!fs.existsSync(dataPath)) {
-            fs.mkdirSync(path.dirname(dataPath), { recursive: true });
-            fs.writeFileSync(dataPath, JSON.stringify({ users: {} }, null, 4));
-        }
-        return JSON.parse(fs.readFileSync(dataPath, "utf8"));
+        const data = await readJSON(dataPath);
+        return data.users ? data : { users: {} };
     } catch (err) {
         console.error("Failed to load npCustomization.json:", err);
         return { users: {} };
     }
 }
 
-function saveDB(db) {
+async function saveDB(db) {
     try {
-        fs.writeFileSync(dataPath, JSON.stringify(db, null, 4));
+        await writeJSON(dataPath, db);
     } catch (err) {
         console.error("Failed to save npCustomization.json:", err);
     }
@@ -59,7 +56,7 @@ module.exports = {
             const userId = interaction.user.id;
             const guildId = interaction.guildId;
 
-            const db = loadDB();
+            const db = await loadDB();
             if (!db.users[userId]) {
                 db.users[userId] = { global: null, guilds: {} };
             }
@@ -73,7 +70,7 @@ module.exports = {
                 db.users[userId].guilds[guildId] = { up, down };
             }
 
-            saveDB(db);
+            await saveDB(db);
 
             const embed = new EmbedBuilder()
                 .setColor("#00ff00")

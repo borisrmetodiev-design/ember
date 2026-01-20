@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const fs = require("fs");
 const path = require("path");
+const { readJSON, writeJSON } = require("../../utils/database");
 
 const SpotifyService = require("../../services/spotify");
 
@@ -13,23 +13,22 @@ const streaksPath = path.join(__dirname, "../../storage/data/streaks.json");
 
 const MUSIC_EMOJI = () => process.env.lumenMUSIC || "🎵";
 
-function loadDB() {
-    if (!fs.existsSync(dataPath)) return { users: {} };
-    return JSON.parse(fs.readFileSync(dataPath, "utf8"));
+async function loadDB() {
+    const data = await readJSON(dataPath);
+    return data.users ? data : { users: {} };
 }
 
-function loadStreaks() {
-    if (!fs.existsSync(streaksPath)) return {};
-    return JSON.parse(fs.readFileSync(streaksPath, "utf8"));
+async function loadStreaks() {
+    return await readJSON(streaksPath);
 }
 
-function saveStreaks(data) {
-    fs.writeFileSync(streaksPath, JSON.stringify(data, null, 4));
+async function saveStreaks(data) {
+    await writeJSON(streaksPath, data);
 }
 
 const streakLogic = {
     async getLastFMUsername(discordId) {
-        const db = loadDB();
+        const db = await loadDB();
         return db.users[discordId] || null;
     },
 
@@ -144,10 +143,10 @@ const streakLogic = {
 
         // Save/Update Streak logic (Mocked or Real)
         // We will store the max streak seen or just current
-        const allStreaks = loadStreaks();
+        const allStreaks = await loadStreaks();
         if (!allStreaks[user.id]) allStreaks[user.id] = {};
         allStreaks[user.id][artistName] = currentStreak; // Store current
-        saveStreaks(allStreaks);
+        await saveStreaks(allStreaks);
 
         // Formatting Start Date
         let dateString = "Unknown";

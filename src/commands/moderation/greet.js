@@ -14,16 +14,15 @@ const {
     TextInputStyle,
     PermissionFlagsBits 
 } = require("discord.js");
-const fs = require("fs");
 const path = require("path");
+const { readJSON, writeJSON } = require("../../utils/database");
 
 const dbPath = path.join(__dirname, "..", "..", "storage", "data", "greetchannels.json");
 
 // Helper to read DB
-function readDb() {
+async function readDb() {
     try {
-        if (!fs.existsSync(dbPath)) return {};
-        return JSON.parse(fs.readFileSync(dbPath, "utf8"));
+        return await readJSON(dbPath);
     } catch (e) {
         console.error("Error reading greetchannels.json", e);
         return {};
@@ -31,9 +30,9 @@ function readDb() {
 }
 
 // Helper to write DB
-function writeDb(data) {
+async function writeDb(data) {
     try {
-        fs.writeFileSync(dbPath, JSON.stringify(data, null, 4));
+        await writeJSON(dbPath, data);
     } catch (e) {
         console.error("Error writing greetchannels.json", e);
     }
@@ -55,7 +54,7 @@ module.exports = {
             throw err;
         }
 
-        let db = readDb();
+        let db = await readDb();
         const guildId = interaction.guild.id;
         
         // Default config if not exists
@@ -67,7 +66,7 @@ module.exports = {
                 image: null,
                 color: "#00FF00" 
             };
-            writeDb(db);
+            await writeDb(db);
         }
 
         // --- STEP 1: Select Channel ---
@@ -119,7 +118,7 @@ module.exports = {
                 return;
             }
 
-            db = readDb(); // Refresh db
+            db = await readDb(); // Refresh db
             let config = db[guildId];
             
             // Handle temp config if missing
@@ -137,7 +136,7 @@ module.exports = {
                 const selectedChannelId = i.values[0];
                 config.channelId = selectedChannelId;
                 db[guildId] = config;
-                writeDb(db);
+                await writeDb(db);
 
                 embed.setDescription(`Configure your welcome message.\n\n**Current Channel:** <#${selectedChannelId}>`);
                 
@@ -153,7 +152,7 @@ module.exports = {
             }
             else if (i.customId === 'greet_remove') {
                 delete db[guildId];
-                writeDb(db);
+                await writeDb(db);
                 
                 config.channelId = null;
                 
@@ -205,7 +204,7 @@ module.exports = {
                     config.title = submitted.fields.getTextInputValue('greet_title_input');
                     config.description = submitted.fields.getTextInputValue('greet_desc_input');
                     db[guildId] = config;
-                    writeDb(db);
+                    await writeDb(db);
 
                     await showCustomizationMenu(submitted, config, guildId);
                 } catch (err) {
@@ -239,7 +238,7 @@ module.exports = {
                     const url = submitted.fields.getTextInputValue('greet_img_url');
                     config.image = url || null;
                     db[guildId] = config;
-                    writeDb(db);
+                    await writeDb(db);
 
                     await showCustomizationMenu(submitted, config, guildId);
                 } catch (err) {

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const fs = require("fs");
 const path = require("path");
+const { readJSON } = require("../../utils/database");
 
 // Node-fetch v3 ESM-compatible import for CommonJS
 const fetch = (...args) =>
@@ -9,14 +9,14 @@ const fetch = (...args) =>
 const dataPath = path.join(__dirname, "../../storage/data/lastFMusers.json");
 const MUSIC_EMOJI = () => process.env.lumenMUSIC || "🎵";
 
-function loadDB() {
-    if (!fs.existsSync(dataPath)) return { users: {} };
-    return JSON.parse(fs.readFileSync(dataPath, "utf8"));
+async function loadDB() {
+    const data = await readJSON(dataPath);
+    return data.users ? data : { users: {} };
 }
 
 const playsFMLogic = {
     async getLastFMUsername(discordId) {
-        const db = loadDB();
+        const db = await loadDB();
         return db.users[discordId] || null;
     },
 

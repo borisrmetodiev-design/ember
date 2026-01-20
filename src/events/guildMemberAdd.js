@@ -1,13 +1,12 @@
 const { EmbedBuilder } = require("discord.js");
-const fs = require("fs");
 const path = require("path");
+const { readJSON } = require("../utils/database");
 
 const dbPath = path.join(__dirname, "..", "storage", "data", "greetchannels.json");
 
-function readDb() {
+async function readDb() {
     try {
-        if (!fs.existsSync(dbPath)) return {};
-        return JSON.parse(fs.readFileSync(dbPath, "utf8"));
+        return await readJSON(dbPath);
     } catch (e) {
         console.error("Error reading greetchannels.json", e);
         return {};
@@ -17,7 +16,7 @@ function readDb() {
 module.exports = (client) => {
     client.on("guildMemberAdd", async (member) => {
         try {
-            const db = readDb();
+            const db = await readDb();
             const config = db[member.guild.id];
 
             if (!config || !config.channelId) return;
