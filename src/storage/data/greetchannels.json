@@ -1,0 +1,16 @@
+{
+    "1346385609291333655": {
+        "channelId": "1417036697178345472",
+        "title": "Welcome to {server}!",
+        "description": "Welcome {user} to {server}! You are member #{count}.",
+        "image": null,
+        "color": "#00FF00"
+    },
+    "1460868956368670777": {
+        "channelId": "1462879328542134414",
+        "title": "Welcome to {server}!",
+        "description": "Welcome {user} to {server}! You are member **#{count}**.",
+        "image": "https://images2.imgbox.com/41/21/pzt4kncK_o.png",
+        "color": "#00FF00"
+    }
+}

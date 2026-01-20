@@ -23,7 +23,8 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
-        GatewayIntentBits.GuildMessageReactions
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildMembers
     ],
     partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User]
 });
@@ -49,6 +50,9 @@ client.prefixCommands = new Collection();
 client.snipes = new Map(); // Store deleted messages: channelId -> array of message objects
 client.editsnipes = new Map(); // Store edited messages: channelId -> array of message objects
 client.reactionsnipes = new Map(); // Store removed reactions: channelId -> array of reaction objects
+
+// Load event handlers
+require("./events/guildMemberAdd")(client);
 
 // Global error handlers to prevent crash
 process.on('unhandledRejection', error => {
