@@ -145,6 +145,27 @@
           "slashUsage": "/nowplaying [user (o)]"
         },
         {
+          "name": "playsfm",
+          "description": "Check play count for a specific artist, album, or track",
+          "aliases": ["pfm", "plays"],
+          "usage": "\\playsfm [artist/track/album] [query] [user (o)]",
+          "slashUsage": "/playsfm [mode] [query] [user (o)]"
+        },
+        {
+          "name": "streak",
+          "description": "Shows your listening streak for an artist",
+          "aliases": ["st"],
+          "usage": "\\streak [artist (o)] [user (o)]",
+          "slashUsage": "/streak [artist (o)] [user (o)]"
+        },
+        {
+          "name": "topfm",
+          "description": "Shows your top artists, tracks, or albums from Last.fm",
+          "aliases": ["tfm", "top"],
+          "usage": "\\topfm [artist/track/album] [period (o)] [user (o)]",
+          "slashUsage": "/topfm [mode] [period (o)] [user (o)]"
+        },
+        {
           "name": "lastfmreactions",
           "description": "Customize your Now Playing reactions",
           "aliases": [],
@@ -190,6 +211,13 @@
           "aliases": ["ly"],
           "usage": "\\lyrics [song]",
           "slashUsage": "/lyrics [song]"
+        },
+        {
+          "name": "spotify",
+          "description": "Download a song from Spotify (or query) as MP3",
+          "aliases": ["sp"],
+          "usage": "\\spotify [query]",
+          "slashUsage": "/spotify [query]"
         }
       ]
     },
@@ -201,6 +229,25 @@
           "description": "Hot-reload all command files",
           "aliases": ["reload", "refresh"],
           "usage": "\\update"
+        }
+      ]
+    },
+    {
+      "name": "Moderation",
+      "commands": [
+        {
+          "name": "greetsetup",
+          "description": "Setup the greeting system for this server",
+          "aliases": [],
+          "usage": "Slash command only",
+          "slashUsage": "/greetsetup"
+        },
+        {
+          "name": "prefix",
+          "description": "Change the bot's prefix for this server",
+          "aliases": ["setprefix"],
+          "usage": "\\prefix [new_prefix]",
+          "slashUsage": "/prefix [new_prefix]"
         }
       ]
     }

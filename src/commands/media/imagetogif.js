@@ -60,12 +60,21 @@ module.exports = {
                 fetchReply: true
             });
 
-            // Fetch image buffer
+            // Fetch image buffer with timeout
             let buffer;
             try {
-                const response = await fetch(image.url);
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+                
+                const response = await fetch(image.url, { signal: controller.signal });
+                clearTimeout(timeout);
+                
+                if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
                 buffer = Buffer.from(await response.arrayBuffer());
             } catch (err) {
+                if (err.name === 'AbortError') {
+                    throw { code: "011", err: new Error("Image download timed out (15s)") };
+                }
                 throw { code: "012", err }; // External API (fetch) failed
             }
 
@@ -98,12 +107,21 @@ module.exports = {
 
             const sent = await message.reply(`${loadingEmoji} Converting your image...`);
 
-            // Fetch image buffer
+            // Fetch image buffer with timeout
             let buffer;
             try {
-                const response = await fetch(image.url);
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+                
+                const response = await fetch(image.url, { signal: controller.signal });
+                clearTimeout(timeout);
+                
+                if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
                 buffer = Buffer.from(await response.arrayBuffer());
             } catch (err) {
+                if (err.name === 'AbortError') {
+                    throw new Error("Image download timed out (15s)");
+                }
                 throw { code: "011", err }; // External API (fetch) failed
             }
 

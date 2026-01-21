@@ -12,6 +12,7 @@ const fs = require("fs");
 const path = require("path");
 const logs = require("./commands/admin/logs");
 const { startKeepAliveServer } = require("./services/keep_alive");
+const prefixService = require("./services/prefixService");
 
 // Import error handler
 const { buildErrorEmbed, handleErrorButton } = require("./utils/errorHandler");
@@ -233,14 +234,28 @@ client.on("interactionCreate", async interaction => {
 // Prefix command handler
 client.on("messageCreate", async message => {
     if (message.author.bot) return;
-    if (!message.content.startsWith(prefix)) return;
+
+    // Determine prefix
+    const guildId = message.guild?.id;
+    const serverPrefix = guildId ? prefixService.getPrefix(guildId, prefix) : prefix;
+    
+    let usedPrefix = null;
+    if (message.content.startsWith(serverPrefix)) {
+        usedPrefix = serverPrefix;
+    } else if (message.content.startsWith("\\\\")) {
+        usedPrefix = "\\\\";
+    } else if (message.content.startsWith("\\")) {
+        usedPrefix = "\\";
+    }
+
+    if (!usedPrefix) return;
 
     // Timing diagnostics
     const receiveTime = Date.now();
     const messageAge = receiveTime - message.createdTimestamp;
     console.log(`[CMD RECEIVED] ${message.content} | Message age: ${messageAge}ms | Received at: ${receiveTime}`);
 
-    const args = message.content.slice(prefix.length).trim().split(/\s+/);
+    const args = message.content.slice(usedPrefix.length).trim().split(/\s+/);
     const commandName = args.shift().toLowerCase();
 
     const command = client.prefixCommands.get(commandName);
@@ -396,6 +411,11 @@ client.on("messageReactionAdd", async (reaction, user) => {
     client.on("debug", (info) => console.log(`[DISCORD DEBUG] ${info}`));
     client.on("warn", (info) => console.log(`[DISCORD WARN] ${info}`));
     client.on("error", (error) => console.error(`[DISCORD ERROR] ${error.message}`));
+
+    // REST Rate Limit Logging
+    client.rest.on("rateLimited", (info) => {
+        console.warn(`[DISCORD RATE LIMIT] Blocked for ${info.timeToReset}ms on ${info.method} ${info.path} | Global: ${info.global}`);
+    });
 
     client.login(process.env.TOKEN)
         .then(() => console.log("[DEBUG] Login promise resolved."))

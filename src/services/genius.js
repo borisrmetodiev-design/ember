@@ -17,7 +17,10 @@ class GeniusService {
         }
 
         try {
-            const songs = await this.client.songs.search(query);
+            const songs = await Promise.race([
+                this.client.songs.search(query),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Genius search timeout")), 10000))
+            ]);
             
             // Map the library's Song objects to our expected format 
             return songs.map(song => ({
@@ -28,7 +31,7 @@ class GeniusService {
                 image: song.thumbnail
             }));
         } catch (error) {
-            console.error("Genius search error:", error);
+            console.error("Genius search error:", error.message);
             // Return empty array on error to safely handle failures
             return [];
         }
@@ -43,11 +46,20 @@ class GeniusService {
         try {
             // The library expects a number or string ID
             const song = await this.client.songs.get(songId);
-            const lyrics = await song.lyrics();
+            
+            // Add a timeout for the actual lyrics scraping which is prone to Cloudflare hanging
+            const lyrics = await Promise.race([
+                song.lyrics(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Genius lyrics fetch timeout")), 15000))
+            ]);
+            
             return lyrics;
         } catch (error) {
-            console.error(`Failed to fetch lyrics for ID ${songId}:`, error);
-            throw new Error("Could not fetch lyrics from Genius.");
+            console.error(`Failed to fetch lyrics for ID ${songId}:`, error.message);
+            if (error.message.includes("timeout")) {
+                throw new Error("Genius search timed out. Their servers might be slow or blocking the request.");
+            }
+            throw new Error("Could not fetch lyrics from Genius. They might be blocking the request (Cloudflare).");
         }
     }
 }
