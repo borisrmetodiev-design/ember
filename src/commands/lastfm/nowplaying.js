@@ -72,10 +72,16 @@ const nowplayingLogic = {
             const queryString = new URLSearchParams(params).toString();
             const url = `https://ws.audioscrobbler.com/2.0/?${queryString}`;
 
-            const res = await fetch(url);
+            // Add timeout
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeout);
             const data = await res.json();
 
             if (data.error) {
+                console.error(`[DEBUG] Last.fm API Error (getrecenttracks): ${data.error} - ${data.message} | User: ${username}`);
                 if (data.error === 17) throw { code: "022" };
                 throw { code: "005", err: data.message };
             }
@@ -85,11 +91,6 @@ const nowplayingLogic = {
             }
 
             const track = data.recenttracks.track[0];
-            // info request usually doesn't need auth unless private? 
-            // track.getinfo usually works publicly unless user specific fields needed.
-            // But if user is private, maybe track.getinfo needs auth too for userplaycount?
-            // "Use the authentication to get the user's playcount"
-            // So we should sign this too if possible.
             
             let infoParams = {
                 method: "track.getinfo",
@@ -108,8 +109,18 @@ const nowplayingLogic = {
             const infoQuery = new URLSearchParams(infoParams).toString();
             const infoUrl = `https://ws.audioscrobbler.com/2.0/?${infoQuery}`;
 
-            const infoRes = await fetch(infoUrl);
+            const infoController = new AbortController();
+            const infoTimeout = setTimeout(() => infoController.abort(), 10000);
+
+            const infoRes = await fetch(infoUrl, { signal: infoController.signal });
+            clearTimeout(infoTimeout);
             const infoData = await infoRes.json();
+
+            if (infoData.error) {
+                console.warn(`[DEBUG] Last.fm API Warning (track.getinfo): ${infoData.error} - ${infoData.message}`);
+                // Proceed anyway, playcount will be 0
+            }
+
             const playcount = infoData.track?.userplaycount || 0;
 
             return {
@@ -119,8 +130,13 @@ const nowplayingLogic = {
                 playedAt: track.date?.uts ? new Date(track.date.uts * 1000) : null
             };
         } catch (err) {
+            if (err.name === 'AbortError') {
+                console.error(`[DEBUG] Last.fm request timed out for ${creds.username}`);
+                throw { code: "005", err: "Last.fm API request timed out." };
+            }
             if (err.code) throw err;
-            throw { code: "005", err };
+            console.error(`[DEBUG] np fetch internal error:`, err);
+            throw { code: "005", err: err.message || err };
         }
     },
 
