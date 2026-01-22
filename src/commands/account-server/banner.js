@@ -24,10 +24,18 @@ module.exports = {
         try {
             let bannerUrl;
             if (server && interaction.guild) {
-                const member = await interaction.guild.members.fetch(targetUser.id);
-                bannerUrl = member.bannerURL({ size: 4096, dynamic: true });
+                const member = await Promise.race([
+                    interaction.guild.members.fetch(targetUser.id),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Member fetch timeout")), 10000))
+                ]).catch(() => null);
+                
+                bannerUrl = member?.bannerURL({ size: 4096, dynamic: true });
             } else {
-                const user = await interaction.client.users.fetch(targetUser.id, { force: true });
+                const user = await Promise.race([
+                    interaction.client.users.fetch(targetUser.id, { force: true }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("User fetch timeout")), 10000))
+                ]).catch(() => targetUser);
+                
                 bannerUrl = user.bannerURL({ size: 4096, dynamic: true });
             }
 
@@ -64,10 +72,16 @@ module.exports = {
 
             let bannerUrl;
             if (server && message.guild) {
-                const member = await message.guild.members.fetch(targetUser.id);
-                bannerUrl = member.bannerURL({ size: 4096, dynamic: true });
+                const member = await Promise.race([
+                    message.guild.members.fetch(targetUser.id),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Member fetch timeout")), 10000))
+                ]).catch(() => null);
+                bannerUrl = member?.bannerURL({ size: 4096, dynamic: true });
             } else {
-                const user = await message.client.users.fetch(targetUser.id, { force: true });
+                const user = await Promise.race([
+                    message.client.users.fetch(targetUser.id, { force: true }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("User fetch timeout")), 10000))
+                ]).catch(() => targetUser);
                 bannerUrl = user.bannerURL({ size: 4096, dynamic: true });
             }
 

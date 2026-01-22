@@ -12,8 +12,16 @@ const pfpData = {
         try {
             let avatarUrl;
             if (server && guild) {
-                const member = await guild.members.fetch(target.id);
-                avatarUrl = member.avatar
+                // Add a timeout to member fetch to prevent hanging in large guilds
+                const member = await Promise.race([
+                    guild.members.fetch(target.id),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Member fetch timeout")), 10000))
+                ]).catch(err => {
+                    console.warn(`[DEBUG] Member fetch failed for ${target.id}: ${err.message}`);
+                    return null; // Fallback to global user avatar
+                });
+
+                avatarUrl = member?.avatar
                     ? member.displayAvatarURL({ size: 4096, dynamic: true })
                     : target.displayAvatarURL({ size: 4096, dynamic: true });
             } else {

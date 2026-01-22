@@ -27,7 +27,11 @@ const client = new Client({
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.GuildMembers
     ],
-    partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User]
+    partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User],
+    rest: {
+        timeout: 15000,
+        retries: 3
+    }
 });
 
 // Prefix logic
@@ -141,8 +145,15 @@ client.on("interactionCreate", async interaction => {
                 await command.executeSlash(interaction);
                 clearTimeout(deferTimeout);
                 const execTime = Date.now() - execStart;
-                console.log(`[SLASH COMPLETE] /${interaction.commandName} | Execution took: ${execTime}ms | Total: ${Date.now() - receiveTime}ms | Deferred: ${deferred}`);
+                const totalTime = Date.now() - receiveTime;
+                console.log(`[SLASH COMPLETE] /${interaction.commandName} | Execution: ${execTime}ms | Total: ${totalTime}ms | Deferred: ${deferred}`);
+                
+                // If it took a weirdly long time, log it
+                if (totalTime > 5000) {
+                    console.warn(`[PERF WARNING] Interaction /${interaction.commandName} took ${totalTime}ms from receipt to completion.`);
+                }
             } catch (err) {
+
                 clearTimeout(deferTimeout);
                 console.log(`[SLASH ERROR] /${interaction.commandName} | Error after: ${Date.now() - receiveTime}ms`);
                 if (err.code !== 10062 && err.code !== 40060) {
@@ -291,13 +302,17 @@ client.on("messageDelete", async (message) => {
 
     const snipe = {
         content: message.content,
-        author: message.author,
+        author: {
+            tag: message.author.tag,
+            id: message.author.id,
+            avatar: message.author.displayAvatarURL({ dynamic: true })
+        },
         image: message.attachments.first()?.proxyURL || null,
         timestamp: message.createdTimestamp,
     };
 
-    snipes.unshift(snipe); // Add to beginning
-    if (snipes.length > 20) snipes.pop(); // Keep last 20
+    snipes.unshift(snipe);
+    if (snipes.length > 20) snipes.pop();
 
     client.snipes.set(message.channel.id, snipes);
 });
@@ -318,7 +333,11 @@ client.on("messageUpdate", async (oldMessage, newMessage) => {
     const editsnipe = {
         oldContent: oldMessage.content,
         newContent: newMessage.content,
-        author: oldMessage.author,
+        author: {
+            tag: oldMessage.author.tag,
+            id: oldMessage.author.id,
+            avatar: oldMessage.author.displayAvatarURL({ dynamic: true })
+        },
         messageId: newMessage.id,
         channelId: newMessage.channel.id,
         timestamp: newMessage.editedTimestamp || Date.now(),
@@ -424,10 +443,23 @@ client.on("messageReactionAdd", async (reaction, user) => {
             process.exit(1); 
         });
 
+    // Termination handlers
+    process.on('SIGINT', () => {
+        console.log("SIGINT received. Shutting down...");
+        client.destroy();
+        process.exit(0);
+    });
+    process.on('SIGTERM', () => {
+        console.log("SIGTERM received. Shutting down...");
+        client.destroy();
+        process.exit(0);
+    });
+
     // DEBUG: heartbeat logger to detect process freezing/hibernation
     setInterval(() => {
         const memory = process.memoryUsage().rss / 1024 / 1024;
-        console.log(`[HEARTBEAT] ${new Date().toISOString()} | Mem: ${memory.toFixed(2)}MB | Ping: ${client.ws.ping}ms`);
+        const wsPing = client.ws?.ping !== undefined ? `${client.ws.ping}ms` : "N/A";
+        console.log(`[HEARTBEAT] ${new Date().toISOString()} | Mem: ${memory.toFixed(2)}MB | Ping: ${wsPing}`);
     }, 60000); // Log every 1 minute
 
     // Event loop lag detection
@@ -435,8 +467,8 @@ client.on("messageReactionAdd", async (reaction, user) => {
     setInterval(() => {
         const now = Date.now();
         const lag = now - lastCheck - 1000; // Expected to be ~1000ms
-        if (lag > 100) {
-            console.warn(`[EVENT LOOP LAG] ${lag}ms lag detected! Bot may be frozen/blocked.`);
+        if (lag > 200) {
+            console.warn(`[EVENT LOOP LAG] Massive lag detected: ${lag}ms! Process was blocked.`);
         }
         lastCheck = now;
     }, 1000); // Check every second

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const fs = require("fs");
+const { readJSON } = require("../../utils/database");
 const path = require("path");
 
 module.exports = {
@@ -18,7 +18,7 @@ module.exports = {
 
     async executeSlash(interaction) {
         const commandName = interaction.options.getString("command");
-        const helpData = JSON.parse(fs.readFileSync(path.join(__dirname, "../../storage/utils/help.json"), "utf8"));
+        const helpData = await readJSON(path.join(__dirname, "../../storage/utils/help.json"));
         
         if (commandName) {
             return this.sendCommandHelp(interaction, commandName, helpData, true);
@@ -30,7 +30,7 @@ module.exports = {
 
     async executePrefix(message, args) {
         const commandName = args[0];
-        const helpData = JSON.parse(fs.readFileSync(path.join(__dirname, "../../storage/utils/help.json"), "utf8"));
+        const helpData = await readJSON(path.join(__dirname, "../../storage/utils/help.json"));
 
         if (commandName) {
             return this.sendCommandHelp(message, commandName, helpData, false);

@@ -107,7 +107,10 @@ module.exports = {
         }
 
         // Download file
-        const response = await fetch(url);
+        const response = await Promise.race([
+            fetch(url),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("File download timed out")), 20000))
+        ]);
         const buffer = Buffer.from(await response.arrayBuffer());
 
         // Create temporary file for Groq API
@@ -123,13 +126,16 @@ module.exports = {
             form.set("model", "whisper-large-v3");
             form.set("response_format", "json");
 
-            const groqRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${apiKey}`
-                },
-                body: form
-            });
+            const groqRes = await Promise.race([
+                fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: form
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Groq API timed out")), 30000))
+            ]);
 
             const body = await groqRes.json();
             

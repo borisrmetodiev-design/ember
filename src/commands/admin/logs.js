@@ -1,16 +1,19 @@
 const { EmbedBuilder } = require("discord.js");
-const { execSync } = require("child_process");
+const { exec } = require("child_process");
+const { promisify } = require("util");
+const execPromise = promisify(exec);
 
 module.exports = {
     name: "logs",
 
     /**
-     * Get the latest git commit info
-     * @returns {string}
+     * Get the latest git commit info asynchronously
+     * @returns {Promise<string>}
      */
-    getCommitInfo() {
+    async getCommitInfo() {
         try {
-            return execSync('git log -1 --format="%h - %s (%cr)"', { encoding: 'utf8' }).trim();
+            const { stdout } = await execPromise('git log -1 --format="%h - %s (%cr)"');
+            return stdout.trim();
         } catch (err) {
             console.error("Failed to fetch git commit info:", err.message);
             return "Unknown";
@@ -23,7 +26,7 @@ module.exports = {
      */
     async sendStartupLog(client) {
         const channelIds = [process.env.LOGS_CHANNEL, process.env.LOGS_CHANNEL_2].filter(Boolean);
-        const commitInfo = this.getCommitInfo();
+        const commitInfo = await this.getCommitInfo();
 
         const embed = new EmbedBuilder()
             .setColor("#00ff99")
@@ -53,7 +56,7 @@ module.exports = {
      */
     async sendUpdateLog(client) {
         const channelIds = [process.env.LOGS_CHANNEL, process.env.LOGS_CHANNEL_2].filter(Boolean);
-        const commitInfo = this.getCommitInfo();
+        const commitInfo = await this.getCommitInfo();
 
         const embed = new EmbedBuilder()
             .setColor("#ffaa00")

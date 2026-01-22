@@ -47,18 +47,24 @@ module.exports = {
 
     async applyMagik(imageUrl, intensity = 2) {
         try {
-            const apiRes = await fetch(`https://nekobot.xyz/api/imagegen?type=magik&image=${encodeURIComponent(imageUrl)}&intensity=${intensity}`);
+            const apiRes = await Promise.race([
+                fetch(`https://nekobot.xyz/api/imagegen?type=magik&image=${encodeURIComponent(imageUrl)}&intensity=${intensity}`),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("External API Timeout (NekoBot)")), 15000))
+            ]);
             const data = await apiRes.json();
 
             if (!data.success) {
                 throw new Error(data.message || "Failed to apply magik effect");
             }
 
-            const imgRes = await fetch(data.message);
+            const imgRes = await Promise.race([
+                fetch(data.message),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Image download timeout")), 15000))
+            ]);
             if (!imgRes.ok) throw new Error("Failed to fetch generated image");
             return Buffer.from(await imgRes.arrayBuffer());
         } catch (err) {
-            throw { code: "015", err }; // External APIs failed to load
+            throw { code: "015", err: err.message || err }; // External APIs failed to load
         }
     },
 

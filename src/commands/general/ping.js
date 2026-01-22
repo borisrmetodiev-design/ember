@@ -9,7 +9,7 @@ module.exports = {
     name: "ping",
 
     // Shared embed builder
-    buildEmbed(client, apiPing, wsPing, requester) {
+    buildEmbed(client, apiPing, wsPing, internalLag, requester) {
         try {
             const uptime = formatUptime(process.uptime());
             const memory = process.memoryUsage().rss / 1024 / 1024;
@@ -26,22 +26,23 @@ module.exports = {
                 .addFields(
                     { name: "API Latency", value: `\`${apiPing}ms\``, inline: true },
                     { name: "WebSocket Ping", value: `\`${wsPing}ms\``, inline: true },
+                    { name: "Internal Lag", value: `\`${internalLag}ms\``, inline: true },
                     { name: "Uptime", value: `\`${uptime}\``, inline: true },
                     { name: "Memory Usage", value: `\`${memory.toFixed(2)} MB\``, inline: true },
-                    { name: "CPU Load", value: `\`${cpu}\``, inline: true },
-                    { name: "Hosting", value: `\`${hostedOn}\``, inline: true }
+                    { name: "CPU Load", value: `\`${cpu}\``, inline: true }
                 )
-                .setTimestamp()
+                .setFooter({ text: `Requested by ${requester} • Hosting: ${hostedOn}` })
                 .setTimestamp();
         } catch (err) {
-            throw { code: "015", err }; // External APIs failed to load (os/process info)
+            throw { code: "015", err };
         }
     },
 
     // Slash command
     async executeSlash(interaction) {
+        const startTime = Date.now();
         try {
-            const loadingEmoji = process.env.lumenLOAD;
+            const loadingEmoji = process.env.lumenLOAD || "⏳";
 
             let sent;
             try {
@@ -50,20 +51,22 @@ module.exports = {
                     fetchReply: true
                 });
             } catch (err) {
-                throw { code: "014", err }; // Discord API request failed
+                throw { code: "014", err };
             }
 
             const apiPing = sent.createdTimestamp - interaction.createdTimestamp;
             const wsPing = interaction.client.ws.ping;
+            const internalLag = Date.now() - startTime;
 
             if (isNaN(apiPing) || wsPing === undefined) {
-                throw { code: "016" }; // Ping calculation failed
+                throw { code: "016" };
             }
 
             const embed = this.buildEmbed(
                 interaction.client,
                 apiPing,
                 wsPing,
+                internalLag,
                 interaction.user.username
             );
 
@@ -73,36 +76,39 @@ module.exports = {
                     embeds: [embed]
                 });
             } catch (err) {
-                throw { code: "014", err }; // Discord API request failed
+                throw { code: "014", err };
             }
         } catch (err) {
-            throw err.code ? err : { code: "014", err }; // fallback
+            throw err.code ? err : { code: "014", err };
         }
     },
 
     // Prefix command
     async executePrefix(message) {
+        const startTime = Date.now();
         try {
-            const loadingEmoji = process.env.lumenLOAD;
+            const loadingEmoji = process.env.lumenLOAD || "⏳";
 
             let sent;
             try {
                 sent = await message.reply(`${loadingEmoji} Loading...`);
             } catch (err) {
-                throw { code: "014", err }; // Discord API request failed
+                throw { code: "014", err };
             }
 
             const apiPing = sent.createdTimestamp - message.createdTimestamp;
             const wsPing = message.client.ws.ping;
+            const internalLag = Date.now() - startTime;
 
             if (isNaN(apiPing) || wsPing === undefined) {
-                throw { code: "016" }; // Ping calculation failed
+                throw { code: "016" };
             }
 
             const embed = this.buildEmbed(
                 message.client,
                 apiPing,
                 wsPing,
+                internalLag,
                 message.author.username
             );
 
@@ -112,10 +118,10 @@ module.exports = {
                     embeds: [embed]
                 });
             } catch (err) {
-                throw { code: "014", err }; // Discord API request failed
+                throw { code: "014", err };
             }
         } catch (err) {
-            throw err.code ? err : { code: "014", err }; // fallback
+            throw err.code ? err : { code: "014", err };
         }
     },
 };
