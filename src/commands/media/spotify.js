@@ -70,7 +70,7 @@ module.exports = {
         if (process.env.YOUTUBE_COOKIE) {
             play.setToken({
                 youtube: {
-                    cookie: process.env.YOUTUBE_COOKIE
+                    cookie: process.env.YOUTUBE_COOKIE.trim().replace(/[^\x00-\x7F]/g, "")
                 }
             });
         }
@@ -149,8 +149,12 @@ module.exports = {
 
             // download Stream
             // ensure URL is a string
-            if (!ytInfo.url || typeof ytInfo.url !== 'string') throw new Error("Invalid YouTube URL found.");
+            if (!ytInfo.url || typeof ytInfo.url !== 'string') {
+                console.error("[DEBUG] Invalid ytInfo:", JSON.stringify(ytInfo, null, 2));
+                throw new Error("Invalid YouTube URL found.");
+            }
             
+            console.log(`[DEBUG] Attempting to stream: ${ytInfo.url}`);
             const stream = await play.stream(ytInfo.url);
             
             // convert to MP3
