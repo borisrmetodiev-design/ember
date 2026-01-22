@@ -13,7 +13,6 @@ module.exports = {
         try {
             const uptime = formatUptime(process.uptime());
             const memory = process.memoryUsage().rss / 1024 / 1024;
-            const cpu = os.loadavg()[0].toFixed(2);
             const hostedOn = process.env.KOYEB_APP_NAME ? "Server (Koyeb)" : "Local Machine";
 
             return new EmbedBuilder()
@@ -29,7 +28,6 @@ module.exports = {
                     { name: "Internal Lag", value: `\`${internalLag}ms\``, inline: true },
                     { name: "Uptime", value: `\`${uptime}\``, inline: true },
                     { name: "Memory Usage", value: `\`${memory.toFixed(2)} MB\``, inline: true },
-                    { name: "CPU Load", value: `\`${cpu}\``, inline: true },
                     { name: "Hosting", value: `\`${hostedOn}\``, inline: true }
                 )
                 .setFooter({ text: `Requested by ${requester}` })
