@@ -59,7 +59,7 @@ module.exports = {
         if (process.env.YOUTUBE_COOKIE) {
             play.setToken({
                 youtube: {
-                    cookie: process.env.YOUTUBE_COOKIE.trim()
+                    cookie: process.env.YOUTUBE_COOKIE.trim().replace(/[^\x00-\x7F]/g, "")
                 }
             });
         }
