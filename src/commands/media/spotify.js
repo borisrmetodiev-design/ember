@@ -55,10 +55,25 @@ module.exports = {
     },
 
     async executeSlash(interaction) {
+        // Apply cookie if available to bypass bot detection
+        if (process.env.YOUTUBE_COOKIE) {
+            play.setToken({
+                youtube: {
+                    cookie: process.env.YOUTUBE_COOKIE
+                }
+            });
+        }
         await this.handleSpotify(interaction, interaction.options.getString("query"), true);
     },
 
     async executePrefix(message, args) {
+        if (process.env.YOUTUBE_COOKIE) {
+            play.setToken({
+                youtube: {
+                    cookie: process.env.YOUTUBE_COOKIE
+                }
+            });
+        }
         const query = args.join(" ");
         if (!query) return message.reply("Please provide a song name or URL!");
         await this.handleSpotify(message, query, false);

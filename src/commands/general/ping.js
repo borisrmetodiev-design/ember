@@ -29,9 +29,10 @@ module.exports = {
                     { name: "Internal Lag", value: `\`${internalLag}ms\``, inline: true },
                     { name: "Uptime", value: `\`${uptime}\``, inline: true },
                     { name: "Memory Usage", value: `\`${memory.toFixed(2)} MB\``, inline: true },
-                    { name: "CPU Load", value: `\`${cpu}\``, inline: true }
+                    { name: "CPU Load", value: `\`${cpu}\``, inline: true },
+                    { name: "Hosting", value: `\`${hostedOn}\``, inline: true }
                 )
-                .setFooter({ text: `Requested by ${requester} • Hosting: ${hostedOn}` })
+                .setFooter({ text: `Requested by ${requester}` })
                 .setTimestamp();
         } catch (err) {
             throw { code: "015", err };
