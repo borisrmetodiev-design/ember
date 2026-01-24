@@ -102,6 +102,7 @@ for (const category of categories) {
         }
     }
 }
+console.log("[DEBUG] Loaded prefix commands:", Array.from(client.prefixCommands.keys()));
 
 if (!process.env.TOKEN) {
     console.error("CRITICAL ERROR: TOKEN is not defined in process.env!");
@@ -236,6 +237,12 @@ client.on("interactionCreate", async interaction => {
                 const { embed, components } = buildErrorEmbed(err.code || "005", err.err || err);
                 await interaction.update({ embeds: [embed], components });
             }
+        }
+
+        // Spotify buttons
+        if (interaction.isButton()) {
+            const cmd = client.slashCommands.get("spotify");
+            if (cmd && cmd.handleButton) cmd.handleButton(interaction);
         }
     } catch (err) {
         console.error("Unhandled interaction error:", err);
