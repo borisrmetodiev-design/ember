@@ -13,7 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
-// const ytdlp = require("yt-dlp-exec");
+const ytdlpPath = require("yt-dlp-exec/src/constants").YOUTUBE_DL_PATH;
 const ffmpegInfo = require("fluent-ffmpeg");
 const ffmpegPath = require("ffmpeg-static");
 const { search: ytSearch } = require("yt-search");
@@ -407,7 +407,7 @@ module.exports = {
             ];
 
             await new Promise((resolve, reject) => {
-                const ls = spawn("yt-dlp", args);
+                const ls = spawn(ytdlpPath, args);
                 let errorOutput = "";
 
                 ls.stdout.on("data", (data) => console.log(`[YT-DLP] ${data}`));
