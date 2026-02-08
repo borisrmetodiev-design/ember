@@ -97,8 +97,87 @@ async function getAlbumImage(albumName, artistName) {
     }
 }
 
+async function getTrackData(trackId) {
+    try {
+        const token = await getSpotifyToken();
+        if (!token) return null;
+
+        const res = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (err) {
+        return null;
+    }
+}
+
+async function getAlbumTracks(albumId) {
+    try {
+        const token = await getSpotifyToken();
+        if (!token) return null;
+
+        const res = await fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) return null;
+        const albumData = await res.json();
+        
+        return {
+            name: albumData.name,
+            artist: albumData.artists[0]?.name,
+            tracks: albumData.tracks.items.map(track => ({
+                id: track.id,
+                name: track.name,
+                artists: track.artists.map(a => a.name),
+                duration_ms: track.duration_ms,
+                album: { 
+                    name: albumData.name,
+                    images: albumData.images, // Pass the album images down
+                    release_date: albumData.release_date
+                }
+            }))
+        };
+    } catch (err) {
+        return null;
+    }
+}
+
+async function getPlaylistTracks(playlistId) {
+    try {
+        const token = await getSpotifyToken();
+        if (!token) return null;
+
+        const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) return null;
+        const playlistData = await res.json();
+        
+        return {
+            name: playlistData.name,
+            owner: playlistData.owner?.display_name,
+            tracks: playlistData.tracks.items.map(item => ({
+                id: item.track.id,
+                name: item.track.name,
+                artists: item.track.artists.map(a => a.name),
+                duration_ms: item.track.duration_ms,
+                album: item.track.album // Playlist items already have album info
+            }))
+        };
+    } catch (err) {
+        return null;
+    }
+}
+
 module.exports = {
     getArtistImage,
     getTrackImage,
-    getAlbumImage
+    getAlbumImage,
+    getTrackData,
+    getAlbumTracks,
+    getPlaylistTracks
 };

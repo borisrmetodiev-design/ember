@@ -239,10 +239,16 @@ client.on("interactionCreate", async interaction => {
             }
         }
 
-        // Spotify buttons
         if (interaction.isButton()) {
-            const cmd = client.slashCommands.get("spotify");
-            if (cmd && cmd.handleButton) cmd.handleButton(interaction);
+            console.log(`[BUTTON] Clicked: ${interaction.customId}`);
+            if (interaction.customId.startsWith("spotify_")) {
+                const cmd = client.slashCommands.get("spotify");
+                if (cmd && cmd.handleButton) {
+                    await cmd.handleButton(interaction);
+                } else {
+                    console.log(`[ERROR] Spotify command or handleButton not found! (cmd: ${!!cmd})`);
+                }
+            }
         }
     } catch (err) {
         console.error("Unhandled interaction error:", err);
