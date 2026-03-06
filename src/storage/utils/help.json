@@ -248,6 +248,13 @@
           "aliases": ["setprefix"],
           "usage": "\\prefix [new_prefix]",
           "slashUsage": "/prefix [new_prefix]"
+        },
+        {
+          "name": "purge",
+          "description": "Delete the most recent messages in the channel or by a user",
+          "aliases": ["clear", "prune"],
+          "usage": "\\purge [count] [@user (o)] [-a/-aa (o)]",
+          "slashUsage": "/purge [count] [user (o)] [scope (o)]"
         }
       ]
     }
