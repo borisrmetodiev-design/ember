@@ -379,8 +379,12 @@ client.on("messageReactionRemove", async (reaction, user) => {
     const reactionsnipes = client.reactionsnipes.get(reaction.message.channel.id) || [];
 
     const reactionsnipe = {
-        user: user,
-        emoji: reaction.emoji,
+        user: {
+            tag: user.tag,
+            id: user.id,
+            avatar: user.displayAvatarURL({ dynamic: true })
+        },
+        emoji: reaction.emoji.toString(),
         messageId: reaction.message.id,
         channelId: reaction.message.channel.id,
         timestamp: Date.now(),
@@ -409,8 +413,12 @@ client.on("messageReactionAdd", async (reaction, user) => {
     const reactionsnipes = client.reactionsnipes.get(reaction.message.channel.id) || [];
 
     const reactionsnipe = {
-        user: user,
-        emoji: reaction.emoji,
+        user: {
+            tag: user.tag,
+            id: user.id,
+            avatar: user.displayAvatarURL({ dynamic: true })
+        },
+        emoji: reaction.emoji.toString(),
         messageId: reaction.message.id,
         channelId: reaction.message.channel.id,
         timestamp: Date.now(),

@@ -46,7 +46,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setAuthor({ 
                     name: snipe.author?.tag || "Unknown User", 
-                    iconURL: snipe.author?.displayAvatarURL({ dynamic: true }) || null
+                    iconURL: snipe.author?.avatar || null
                 })
                 .setDescription(snipe.content || "*No text content*")
                 .setColor("#000000")

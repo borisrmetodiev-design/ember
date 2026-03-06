@@ -46,7 +46,7 @@ module.exports = {
             return new EmbedBuilder()
                 .setAuthor({ 
                     name: snipe.author?.tag || "Unknown User", 
-                    iconURL: snipe.author?.displayAvatarURL({ dynamic: true }) || null
+                    iconURL: snipe.author?.avatar || null
                 })
                 .setDescription(`**Before:** ${snipe.oldContent || "*No content*"}\n**After:** ${snipe.newContent || "*No content*"}\n\n[Jump to Message](https://discord.com/channels/${context.guild.id}/${snipe.channelId}/${snipe.messageId})`)
                 .setColor("#000000")

@@ -46,7 +46,7 @@ module.exports = {
             return new EmbedBuilder()
                 .setAuthor({ 
                     name: snipe.user?.tag || "Unknown User", 
-                    iconURL: snipe.user?.displayAvatarURL({ dynamic: true }) || null
+                    iconURL: snipe.user?.avatar || null
                 })
                 .setDescription(`Reaction ${snipe.emoji} was **${snipe.action}**\n\n[Jump to Message](https://discord.com/channels/${context.guild.id}/${snipe.channelId}/${snipe.messageId})`)
                 .setColor("#000000")
