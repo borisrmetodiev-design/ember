@@ -23,6 +23,20 @@
           "aliases": ["repeat", "echo"],
           "usage": "\\say [text]",
           "slashUsage": "/say [text]"
+        },
+        {
+          "name": "recentimage",
+          "description": "Sends the most recent image posted in this channel",
+          "aliases": ["ri", "lastimage"],
+          "usage": "\\recentimage",
+          "slashUsage": "/recentimage"
+        },
+        {
+          "name": "recenttext",
+          "description": "Sends the most recent text message posted in this channel",
+          "aliases": ["rt", "lasttext"],
+          "usage": "\\recenttext",
+          "slashUsage": "/recenttext"
         }
       ]
     },
@@ -171,6 +185,13 @@
           "aliases": [],
           "usage": null,
           "slashUsage": "/lastfmreactions [upvote_emoji] [downvote_emoji] [scope]"
+        },
+        {
+          "name": "cover",
+          "description": "Shows the cover art of the song you're listening to or the one you specify",
+          "aliases": ["c"],
+          "usage": "\\cover [user (o)] [album (o)]",
+          "slashUsage": "/cover [user (o)] [album (o)]"
         }
       ]
     },
