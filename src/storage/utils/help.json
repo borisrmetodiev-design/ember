@@ -276,6 +276,18 @@
           "aliases": ["clear", "prune"],
           "usage": "\\purge [count] [@user (o)] [-a/-aa (o)]",
           "slashUsage": "/purge [count] [user (o)] [scope (o)]"
+        },
+        {
+          "name": "pin",
+          "description": "Pin the message you are replying to",
+          "aliases": [],
+          "usage": "\\pin"
+        },
+        {
+          "name": "unpin",
+          "description": "Unpin the message you are replying to",
+          "aliases": [],
+          "usage": "\\unpin"
         }
       ]
     }
