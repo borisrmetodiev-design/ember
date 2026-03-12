@@ -26,17 +26,17 @@
         },
         {
           "name": "recentimage",
-          "description": "Sends the most recent image posted in this channel",
+          "description": "Sends the most recent image. Use -g for global or #channel for a specific one",
           "aliases": ["ri", "lastimage"],
-          "usage": "\\recentimage",
-          "slashUsage": "/recentimage"
+          "usage": "\\recentimage [#channel/-g (o)]",
+          "slashUsage": "/recentimage [channel (o)] [global (o)]"
         },
         {
           "name": "recenttext",
-          "description": "Sends the most recent text message posted in this channel",
+          "description": "Sends the most recent text message. Use -g for global or #channel for a specific one",
           "aliases": ["rt", "lasttext"],
-          "usage": "\\recenttext",
-          "slashUsage": "/recenttext"
+          "usage": "\\recenttext [#channel/-g (o)]",
+          "slashUsage": "/recenttext [channel (o)] [global (o)]"
         }
       ]
     },
