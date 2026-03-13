@@ -37,6 +37,13 @@
           "aliases": ["rt", "lasttext"],
           "usage": "\\recenttext [#channel/-g (o)]",
           "slashUsage": "/recenttext [channel (o)] [global (o)]"
+        },
+        {
+          "name": "tz",
+          "description": "Set or view timezones for yourself or a city",
+          "aliases": ["timezone"],
+          "usage": "\\tz [set/view] [query/user]",
+          "slashUsage": "/tz [command] [options]"
         }
       ]
     },
@@ -103,7 +110,12 @@
           "aliases": ["rsnipe", "rs"],
           "usage": "\\reactionsnipe [count (o)]",
           "slashUsage": "/reactionsnipe [count (o)]"
-        },
+        }
+      ]
+    },
+    {
+      "name": "Games",
+      "commands": [
         {
           "name": "coinflip",
           "description": "Flip a coin",

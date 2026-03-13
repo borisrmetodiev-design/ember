@@ -266,10 +266,6 @@ client.on("messageCreate", async message => {
     let usedPrefix = null;
     if (message.content.startsWith(serverPrefix)) {
         usedPrefix = serverPrefix;
-    } else if (message.content.startsWith("\\\\")) {
-        usedPrefix = "\\\\";
-    } else if (message.content.startsWith("\\")) {
-        usedPrefix = "\\";
     }
 
     if (!usedPrefix) return;
