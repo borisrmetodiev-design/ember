@@ -23,6 +23,16 @@ module.exports = {
 
         const newPrefix = interaction.options.getString("new_prefix");
         
+        if (newPrefix === "-r") {
+            prefixService.resetPrefix(interaction.guild.id);
+            const embed = new EmbedBuilder()
+                .setTitle("Prefix Reset")
+                .setDescription("The custom prefix for this server has been removed. The bot will now only respond to the default global prefix.")
+                .setColor("#00FF00")
+                .setTimestamp();
+            return interaction.reply({ embeds: [embed] });
+        }
+
         if (newPrefix.length > 5) {
             return interaction.reply({ content: "The prefix cannot be longer than 5 characters.", ephemeral: true });
         }
@@ -50,7 +60,17 @@ module.exports = {
         const newPrefix = args[0];
         if (!newPrefix) {
             const currentPrefix = prefixService.getPrefix(message.guild.id, "\\");
-            return message.reply(`The current prefix for this server is \`${currentPrefix}\`. Use \`prefix [new_prefix]\` to change it.`);
+            return message.reply(`The current prefix for this server is \`${currentPrefix}\`. Use \`prefix [new_prefix]\` to change it or \`prefix -r\` to reset it.`);
+        }
+
+        if (newPrefix === "-r") {
+            prefixService.resetPrefix(message.guild.id);
+            const embed = new EmbedBuilder()
+                .setTitle("Prefix Reset")
+                .setDescription("The custom prefix for this server has been removed. The bot will now only respond to the default global prefix.")
+                .setColor("#00FF00")
+                .setTimestamp();
+            return message.reply({ embeds: [embed] });
         }
 
         if (newPrefix.length > 5) {

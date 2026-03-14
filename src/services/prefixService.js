@@ -45,6 +45,20 @@ function setPrefix(guildId, prefix) {
     }
 }
 
+function resetPrefix(guildId) {
+    const prefixes = getPrefixes();
+    if (prefixes[guildId]) {
+        delete prefixes[guildId];
+        prefixCache = prefixes; // Update cache
+        
+        try {
+            fs.writeFileSync(prefixesPath, JSON.stringify(prefixes, null, 2));
+        } catch (err) {
+            console.error('Error writing prefixes.json:', err);
+        }
+    }
+}
+
 function getPrefix(guildId, defaultPrefix) {
     const prefixes = getPrefixes();
     return prefixes[guildId] || defaultPrefix;
@@ -52,5 +66,6 @@ function getPrefix(guildId, defaultPrefix) {
 
 module.exports = {
     getPrefix,
-    setPrefix
+    setPrefix,
+    resetPrefix
 };
