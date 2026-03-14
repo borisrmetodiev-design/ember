@@ -2,8 +2,6 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const path = require("path");
 const { readJSON, writeJSON } = require("../../utils/database");
 
-const SpotifyService = require("../../services/spotify");
-
 // Node-fetch v3 ESM-compatible import for CommonJS
 const fetch = (...args) =>
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
@@ -47,7 +45,7 @@ const streakLogic = {
         return data.recenttracks.track || [];
     },
 
-    async getArtistPlays(username, artistName) {
+    async getArtistInfo(username, artistName) {
         const apiKey = process.env.LASTFM_API_KEY;
         const url = `https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(
             artistName
@@ -55,7 +53,19 @@ const streakLogic = {
         
         const res = await fetch(url);
         const data = await res.json();
-        return data.artist?.stats?.userplaycount || 0;
+        
+        let playcount = data.artist?.stats?.userplaycount || 0;
+        let image = null;
+        if (data.artist?.image && data.artist.image.length > 0) {
+            const extralarge = data.artist.image.find(img => img.size === 'extralarge');
+            const large = data.artist.image.find(img => img.size === 'large');
+            const imgUrl = extralarge?.['#text'] || large?.['#text'] || data.artist.image[data.artist.image.length - 1]['#text'];
+            if (imgUrl && !imgUrl.includes("2a96cbd8b46e442fc41c2b86b821562f.png")) {
+                image = imgUrl.replace(/\/i\/u\/[a-zA-Z0-9x]+\//, "/i/u/_/");
+            }
+        }
+        
+        return { playcount, image };
     },
 
     // Identify the target artist: optionally provided or the most recent one
@@ -138,8 +148,7 @@ const streakLogic = {
         }
 
         const { currentStreak, startDate } = this.calculateStreak(tracks, artistName);
-        const playCount = await this.getArtistPlays(username, artistName);
-        const artistImage = await SpotifyService.getArtistImage(artistName);
+        const { playcount: playCount, image: artistImage } = await this.getArtistInfo(username, artistName);
 
         // Save/Update Streak logic (Mocked or Real)
         // We will store the max streak seen or just current

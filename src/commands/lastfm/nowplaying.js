@@ -2,7 +2,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const path = require("path");
 
-const SpotifyService = require("../../services/spotify");
 const { signParams } = require("../../utils/lastfmHelper");
 const { readJSON } = require("../../utils/database");
 
@@ -160,7 +159,32 @@ const nowplayingLogic = {
         const artist = track.artist["#text"];
         const name = track.name;
         const album = track.album["#text"] || "Unknown Album";
-        const spotifyImage = await SpotifyService.getTrackImage(name, artist);
+        
+        let imageUrl = null;
+        if (track.image && track.image.length > 0) {
+            const extralarge = track.image.find(img => img.size === 'extralarge');
+            const large = track.image.find(img => img.size === 'large');
+            const url = extralarge?.['#text'] || large?.['#text'] || track.image[track.image.length - 1]['#text'];
+            if (url && url.length > 0) {
+                imageUrl = url.replace(/\/i\/u\/[a-zA-Z0-9x]+\//, "/i/u/_/");
+            }
+        }
+
+        if (!imageUrl || imageUrl.includes("2a96cbd8b46e442fc41c2b86b821562f.png")) {
+            try {
+                const term = `${name} ${artist}`;
+                const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=1`);
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    imageUrl = data.results[0].artworkUrl100.replace("100x100", "1000x1000"); 
+                } else if (imageUrl && imageUrl.includes("2a96cbd8b46e442fc41c2b86b821562f.png")) {
+                    imageUrl = null;
+                }
+            } catch (e) {
+                console.error("iTunes fetch failed:", e);
+                if (imageUrl && imageUrl.includes("2a96cbd8b46e442fc41c2b86b821562f.png")) imageUrl = null;
+            }
+        }
 
         const trackUrl = track.url || null;
         const artistUrl = `https://www.last.fm/music/${encodeURIComponent(artist)}`;
@@ -188,7 +212,7 @@ const nowplayingLogic = {
             )
             .setTimestamp();
 
-        if (spotifyImage) embed.setThumbnail(spotifyImage);
+        if (imageUrl) embed.setThumbnail(imageUrl);
         return embed;
     },
 

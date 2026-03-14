@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const path = require("path");
 const { signParams } = require("../../utils/lastfmHelper");
-const SpotifyService = require("../../services/spotify");
 const { readJSON } = require("../../utils/database");
 
 const fetch = (...args) =>
@@ -204,17 +203,27 @@ const discoveryLogic = {
                 listeners: parseInt(info.listeners || info.stats?.listeners) || 0,
                 url: info.url,
                 image: await (async () => {
-                    let img;
-                    if (mode === "artist") img = await SpotifyService.getArtistImage(info.name);
-                    else if (mode === "song") img = await SpotifyService.getTrackImage(info.name, info.artist.name);
-                    else if (mode === "album") img = await SpotifyService.getAlbumImage(info.name, info.artist);
-                    
-                    if (img) return img;
-
-                    // Fallback to high-res Last.fm logic
-                    return ((info.image || info.album?.image)?.find(img => img.size === "mega")?.["#text"] || 
+                    let imgUrl = ((info.image || info.album?.image)?.find(img => img.size === "mega")?.["#text"] || 
                            (info.image || info.album?.image)?.find(img => img.size === "extralarge")?.["#text"] || 
-                           (info.image || info.album?.image)?.find(img => img.size === "large")?.["#text"])?.replace(/\/u\/\d+x\d+\//, "/u/800x800/");
+                           (info.image || info.album?.image)?.find(img => img.size === "large")?.["#text"]);
+                           
+                    if (imgUrl) imgUrl = imgUrl.replace(/\/i\/u\/[a-zA-Z0-9x]+\//, "/i/u/_/");
+                    
+                    if (!imgUrl || imgUrl.includes("2a96cbd8b46e442fc41c2b86b821562f.png")) {
+                         // Try iTunes fallback for albums/songs
+                         if (mode !== "artist") {
+                             try {
+                                 const term = `${info.name} ${info.artist?.name || info.artist}`;
+                                 const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=1`);
+                                 const data = await res.json();
+                                 if (data.results && data.results.length > 0) {
+                                     return data.results[0].artworkUrl100.replace("100x100", "1000x1000"); 
+                                 }
+                             } catch (e) {}
+                         }
+                         return imgUrl && imgUrl.includes("2a96cbd8b46e442fc41c2b86b821562f.png") ? null : imgUrl;
+                    }
+                    return imgUrl;
                 })()
             };
 
