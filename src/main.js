@@ -261,11 +261,16 @@ client.on("messageCreate", async message => {
 
     // Determine prefix
     const guildId = message.guild?.id;
-    const serverPrefix = guildId ? prefixService.getPrefix(guildId, prefix) : prefix;
+    const customPrefix = guildId ? prefixService.getPrefix(guildId, null) : null;
     
     let usedPrefix = null;
-    if (message.content.startsWith(serverPrefix)) {
-        usedPrefix = serverPrefix;
+    // Check custom server prefix first
+    if (customPrefix && message.content.startsWith(customPrefix)) {
+        usedPrefix = customPrefix;
+    } 
+    // Then check the global, env-specific prefix (e.g. \\ for local, \ for server)
+    else if (message.content.startsWith(prefix)) {
+        usedPrefix = prefix;
     }
 
     if (!usedPrefix) return;
