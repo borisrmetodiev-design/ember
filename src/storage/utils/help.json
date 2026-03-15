@@ -39,11 +39,18 @@
           "slashUsage": "/recenttext [channel (o)] [global (o)]"
         },
         {
-          "name": "tz",
-          "description": "Set or view timezones for yourself or a city",
+          "name": "tz view",
+          "description": "View timezones for yourself or a city",
           "aliases": ["timezone"],
-          "usage": "\\tz [set/view] [query/user]",
-          "slashUsage": "/tz [command] [options]"
+          "usage": "\\tz view [query/user]",
+          "slashUsage": "/tz view [query/user]"
+        },
+        {
+          "name": "tz set",
+          "description": "Set your timezone",
+          "aliases": ["timezone"],
+          "usage": "\\tz set [query]",
+          "slashUsage": "/tz set [query]"
         }
       ]
     },
