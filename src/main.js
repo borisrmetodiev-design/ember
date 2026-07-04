@@ -6,7 +6,7 @@ const {
     GatewayIntentBits,
     Partials,
     Collection,
-    MessageFlags
+    MessageFlags 
 } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
@@ -25,7 +25,8 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.GuildMembers
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildVoiceStates
     ],
     partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User],
     rest: {
@@ -247,6 +248,16 @@ client.on("interactionCreate", async interaction => {
                     await cmd.handleButton(interaction);
                 } else {
                     console.log(`[ERROR] Spotify command or handleButton not found! (cmd: ${!!cmd})`);
+                }
+            }
+
+            // Music button handler
+            if (interaction.customId.startsWith("music_")) {
+                try {
+                    const musicService = require("./services/music/MusicService");
+                    await musicService.handleButton(interaction);
+                } catch (err) {
+                    console.error("[ERROR] Music button handler failed:", err.message);
                 }
             }
         }

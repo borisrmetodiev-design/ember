@@ -102,7 +102,8 @@ module.exports = {
             ] });
         }
 
-        const lyrics = await GeniusService.fetchLyrics(song.id);
+        const rawLyrics = await GeniusService.fetchLyrics(song.id, song.title, song.artist);
+        const lyrics = this.cleanLyrics(rawLyrics);
         
         // Split lyrics into pages (max 2000 chars per page for better readability)
         const pages = this.splitLyrics(lyrics, 2000);
@@ -113,13 +114,17 @@ module.exports = {
                 .setColor("#ffff00")
                 .setAuthor({ 
                     name: `${song.title} - ${song.artist}`, 
-                    iconURL: song.image,
-                    url: song.url
-                })
-                .setThumbnail(song.image)
-                .setDescription(pages[pageIdx])
+                    iconURL: song.image || undefined,
+                    url: song.url || undefined
+                });
+
+            if (song.image) {
+                embed.setThumbnail(song.image);
+            }
+
+            embed.setDescription(pages[pageIdx])
                 .setFooter({ 
-                    text: `Page ${pageIdx + 1} of ${pages.length} | Lyrics via Genius` 
+                    text: `Page ${pageIdx + 1} of ${pages.length} | Lyrics via Genius/LRCLIB` 
                 });
 
             if (pages.length <= 1) return { embeds: [embed], components: [] };
@@ -170,6 +175,25 @@ module.exports = {
             );
             initialMsg.edit({ components: [disabledRow] }).catch(() => {});
         });
+    },
+
+    cleanLyrics(lyrics) {
+        if (!lyrics) return "";
+        let cleaned = lyrics.trim();
+        
+        // Remove leading "[Lyrics of ...]" if present (common scraper artifact)
+        cleaned = cleaned.replace(/^\s*\[Lyrics of "[^"]+"(?:\s+by\s+[^\]]+)?\]\s*/i, "");
+        
+        let paragraphs = cleaned.split(/\n\s*\n/);
+        if (paragraphs.length > 1) {
+            const firstParagraph = paragraphs[0].trim();
+            // Check if the first paragraph is an intro or starts with intro
+            if (/^\s*\[?Intro/i.test(firstParagraph)) {
+                paragraphs.shift();
+            }
+        }
+        
+        return paragraphs.join("\n\n").trim();
     },
 
     splitLyrics(text, maxLength) {

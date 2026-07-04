@@ -262,6 +262,130 @@
       ]
     },
     {
+      "name": "Music",
+      "commands": [
+        {
+          "name": "play",
+          "description": "Play a song or playlist from YouTube, Spotify, or SoundCloud",
+          "aliases": ["p"],
+          "usage": "\\play [query or URL]",
+          "slashUsage": "/play [query]"
+        },
+        {
+          "name": "musicnowplaying",
+          "description": "Show the currently playing track with controls",
+          "aliases": ["mnp", "musicnp"],
+          "usage": "\\musicnowplaying",
+          "slashUsage": "/musicnowplaying"
+        },
+        {
+          "name": "pause",
+          "description": "Pause the current track",
+          "aliases": [],
+          "usage": "\\pause",
+          "slashUsage": "/pause"
+        },
+        {
+          "name": "resume",
+          "description": "Resume playback",
+          "aliases": ["unpause"],
+          "usage": "\\resume",
+          "slashUsage": "/resume"
+        },
+        {
+          "name": "stop",
+          "description": "Stop playback and clear the queue",
+          "aliases": [],
+          "usage": "\\stop",
+          "slashUsage": "/stop"
+        },
+        {
+          "name": "skip",
+          "description": "Skip the current track",
+          "aliases": ["s", "sk"],
+          "usage": "\\skip",
+          "slashUsage": "/skip"
+        },
+        {
+          "name": "previous",
+          "description": "Go back to the previous track",
+          "aliases": ["prev", "back"],
+          "usage": "\\previous",
+          "slashUsage": "/previous"
+        },
+        {
+          "name": "next",
+          "description": "Skip to the next track",
+          "aliases": ["n"],
+          "usage": "\\next",
+          "slashUsage": "/next"
+        },
+        {
+          "name": "queue",
+          "description": "Show the current music queue",
+          "aliases": ["q"],
+          "usage": "\\queue [page (o)]",
+          "slashUsage": "/queue [page (o)]"
+        },
+        {
+          "name": "remove",
+          "description": "Remove a track from the queue by position",
+          "aliases": ["rm"],
+          "usage": "\\remove [position]",
+          "slashUsage": "/remove [position]"
+        },
+        {
+          "name": "shuffle",
+          "description": "Shuffle the upcoming queue",
+          "aliases": ["sh"],
+          "usage": "\\shuffle",
+          "slashUsage": "/shuffle"
+        },
+        {
+          "name": "clear",
+          "description": "Clear all upcoming tracks from the queue",
+          "aliases": [],
+          "usage": "\\clear",
+          "slashUsage": "/clear"
+        },
+        {
+          "name": "jump",
+          "description": "Jump to a specific position in the queue",
+          "aliases": ["j"],
+          "usage": "\\jump [position]",
+          "slashUsage": "/jump [position]"
+        },
+        {
+          "name": "seek",
+          "description": "Seek to a position in the current track",
+          "aliases": [],
+          "usage": "\\seek [time]",
+          "slashUsage": "/seek [time]"
+        },
+        {
+          "name": "autoplay",
+          "description": "Toggle autoplay for related tracks",
+          "aliases": ["ap"],
+          "usage": "\\autoplay",
+          "slashUsage": "/autoplay"
+        },
+        {
+          "name": "volume",
+          "description": "Set or view playback volume",
+          "aliases": ["vol", "v"],
+          "usage": "\\volume [0-100 (o)]",
+          "slashUsage": "/volume [amount (o)]"
+        },
+        {
+          "name": "loop",
+          "description": "Set loop mode (off, song, or queue)",
+          "aliases": ["l", "repeat"],
+          "usage": "\\loop [none/song/queue (o)]",
+          "slashUsage": "/loop [mode (o)]"
+        }
+      ]
+    },
+    {
       "name": "Admin",
       "commands": [
         {

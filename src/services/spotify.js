@@ -160,13 +160,41 @@ async function getPlaylistTracks(playlistId) {
         return {
             name: playlistData.name,
             owner: playlistData.owner?.display_name,
-            tracks: playlistData.tracks.items.map(item => ({
+            tracks: playlistData.tracks.items
+                .filter(item => item?.track?.id && item.track.name)
+                .map(item => ({
                 id: item.track.id,
                 name: item.track.name,
                 artists: item.track.artists.map(a => a.name),
                 duration_ms: item.track.duration_ms,
-                album: item.track.album // Playlist items already have album info
+                album: item.track.album
             }))
+        };
+    } catch (err) {
+        return null;
+    }
+}
+async function searchTrack(query) {
+    try {
+        const token = await getSpotifyToken();
+        if (!token) return null;
+
+        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`;
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) return null;
+        const data = await res.json();
+        const track = data.tracks?.items?.[0];
+        if (!track) return null;
+
+        return {
+            name:     track.name,
+            artist:   track.artists?.map(a => a.name).join(", ") || "Unknown",
+            image:    track.album?.images?.[0]?.url || null,
+            duration_ms: track.duration_ms,
+            id:       track.id,
         };
     } catch (err) {
         return null;
@@ -179,5 +207,6 @@ module.exports = {
     getAlbumImage,
     getTrackData,
     getAlbumTracks,
-    getPlaylistTracks
+    getPlaylistTracks,
+    searchTrack
 };

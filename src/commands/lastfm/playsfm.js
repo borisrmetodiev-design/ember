@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const path = require("path");
 const { readJSON } = require("../../utils/database");
+const GeniusService = require("../../services/genius");
 
 // Node-fetch v3 ESM-compatible import for CommonJS
 const fetch = (...args) =>
@@ -251,7 +252,7 @@ const playsFMLogic = {
                 } else {
                     // Try Genius as second fallback
                      try {
-                        const song = await geniusService.searchSong(query);
+                        const song = await GeniusService.searchSong(query);
                         if (song && song.image) {
                             result.image = song.image;
                         }

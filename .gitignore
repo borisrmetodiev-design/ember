@@ -4,3 +4,5 @@ node_modules/
 # Environment
 .env
 
+# Music cache
+music-cache/
